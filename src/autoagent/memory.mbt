@@ -27,7 +27,7 @@ pub fn Memory::store(self : Memory, msg : Message) -> Unit {
   } else {
     msg.content
   }
-  let trimmed_msg = { role: msg.role, content }
+  let trimmed_msg : Message = { role: msg.role, content }
   if self.messages.length() >= self.max_messages {
     self.messages = self.messages[1:].map(fn(x) { x })
   }

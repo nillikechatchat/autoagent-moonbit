@@ -493,9 +493,7 @@ def cmd_run(args):
 
     response, tool_results = agent_turn(user_input, memory, config)
 
-    for tr in tool_results:
-        print(f"[{tr['tool']}] {tr['result'][:200]}", file=sys.stderr)
-
+    # Print response (includes tool results)
     print(response)
     memory.add("assistant", response)
 

@@ -39,16 +39,7 @@ fn main {
 
   if cli.goal == "" {
     println(@autoagent.banner())
-    println(@autoagent.info("Ready. Type a message or goal:"))
-    println("")
-    println("  Examples:")
-    println("  > build a chatbot for my website")
-    println("  > research the best database for my project")
-    println("  > write tests for my auth module")
-    println("")
-    println("  Or use the interactive shell:")
-    println("  make repl")
-    println("  ./scripts/autoagent.sh")
+    println(@autoagent.info("Ready. Use: make repl"))
     return
   }
 
@@ -70,7 +61,7 @@ fn main {
       @autoagent.Tool::new("checklist", "Generate a safe usage checklist.", "safety", Low),
       @autoagent.Tool::new("coach", "Coach the user through agent operation.", "education", Low),
     ],
-    @autoagent.default_skill_registry(),
+    skills,
   )
 
   if cli.verbose {

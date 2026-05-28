@@ -1,11 +1,10 @@
 #!/bin/bash
-# AutoAgent - real LLM agent shell
+# AutoAgent - entry point
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-AGENT_PY="$ROOT_DIR/scripts/agent.py"
 AUTOAGENT_HOME="${AUTOAGENT_HOME:-.autoagent}"
 
 init_workspace() {
@@ -18,11 +17,11 @@ init_workspace() {
     "api_key": "",
     "base_url": "https://proxy.monkeycode-ai.com/v1",
     "model": "monkeycode-basic/qwen3.5-plus",
-    "timeout_seconds": 60
+    "timeout_seconds": 30
   },
   "agent": {
     "name": "AutoAgent",
-    "system_prompt": "You are AutoAgent, a helpful AI assistant. Create actual files with working code when asked.",
+    "system_prompt": "You are AutoAgent, a helpful AI assistant.",
     "max_steps": 10,
     "max_goal_length": 4000,
     "max_tool_output_length": 4000
@@ -39,32 +38,31 @@ case "${1:-chat}" in
     ;;
   chat|shell|repl|"")
     init_workspace
-    python3 "$AGENT_PY" chat
+    exec python3 "$ROOT_DIR/scripts/agent.py" chat
     ;;
   run)
     shift
     init_workspace
-    python3 "$AGENT_PY" run "$@"
+    exec python3 "$ROOT_DIR/scripts/agent.py" run "$@"
     ;;
   tools)
-    python3 "$AGENT_PY" tools
+    python3 "$ROOT_DIR/scripts/agent.py" tools
     ;;
   memory)
-    python3 "$AGENT_PY" memory
+    python3 "$ROOT_DIR/scripts/agent.py" memory
     ;;
   help|--help|-h)
-    echo "AutoAgent - real LLM agent"
+    echo "AutoAgent"
     echo ""
     echo "Usage:"
-    echo "  autoagent.sh              Start interactive chat"
-    echo "  autoagent.sh chat         Start interactive chat"
-    echo "  autoagent.sh run <msg>    Single-shot mode"
-    echo "  autoagent.sh init         Initialize workspace"
-    echo "  autoagent.sh tools        List tools"
-    echo "  autoagent.sh memory       Show memory status"
+    echo "  autoagent.sh           Start interactive chat"
+    echo "  autoagent.sh run <msg> Single-shot mode"
+    echo "  autoagent.sh init      Initialize workspace"
+    echo "  autoagent.sh tools     List tools"
+    echo "  autoagent.sh memory    Show memory"
     ;;
   *)
     init_workspace
-    python3 "$AGENT_PY" run "$@"
+    exec python3 "$ROOT_DIR/scripts/agent.py" run "$@"
     ;;
 esac
