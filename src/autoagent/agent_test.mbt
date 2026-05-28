@@ -425,3 +425,257 @@ test "anti patterns list" {
   assert_eq(patterns.length(), 8)
   assert_eq(patterns[0].contains("46.4%"), true)
 }
+
+// ============================================================
+// Skill system tests
+// ============================================================
+
+///|
+test "skill registry has 4 built-in skills" {
+  let registry = default_skill_registry()
+  let names = registry.names()
+  assert_eq(names.length(), 4)
+  assert_eq(names.contains("research"), true)
+  assert_eq(names.contains("code-review"), true)
+  assert_eq(names.contains("docs"), true)
+  assert_eq(names.contains("testing"), true)
+}
+
+///|
+test "skill registry find by name" {
+  let registry = default_skill_registry()
+  let s = registry.find("research")
+  match s {
+    Some(skill) => {
+      assert_eq(skill.name, "research")
+      assert_eq(skill.category, "knowledge")
+      assert_eq(skill.tools.length(), 2)
+    }
+    None => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill registry find nonexistent returns none" {
+  let registry = default_skill_registry()
+  let s = registry.find("nonexistent")
+  match s {
+    Some(_) => assert_eq(false, true)
+    None => assert_eq(true, true)
+  }
+}
+
+///|
+test "skill registry select for research goal" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("research the best database options")
+  let mut has_research = false
+  for s in selected {
+    if s.name == "research" { has_research = true }
+  }
+  assert_eq(has_research, true)
+}
+
+///|
+test "skill registry select for review goal" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("review my code quality")
+  let mut has_review = false
+  for s in selected {
+    if s.name == "code-review" { has_review = true }
+  }
+  assert_eq(has_review, true)
+}
+
+///|
+test "skill registry select for test goal" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("write unit tests for auth module")
+  let mut has_testing = false
+  for s in selected {
+    if s.name == "testing" { has_testing = true }
+  }
+  assert_eq(has_testing, true)
+}
+
+///|
+test "skill registry select for docs goal" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("document the API")
+  let mut has_docs = false
+  for s in selected {
+    if s.name == "docs" { has_docs = true }
+  }
+  assert_eq(has_docs, true)
+}
+
+///|
+test "skill registry all_tools returns 8 tools" {
+  let registry = default_skill_registry()
+  let tools = registry.all_tools()
+  assert_eq(tools.length(), 8)
+}
+
+///|
+test "skill registry all_instructions includes skill prompts" {
+  let registry = default_skill_registry()
+  let instructions = registry.all_instructions()
+  assert_eq(instructions.contains("[research Skill]"), true)
+  assert_eq(instructions.contains("[code-review Skill]"), true)
+  assert_eq(instructions.contains("[docs Skill]"), true)
+  assert_eq(instructions.contains("[testing Skill]"), true)
+}
+
+///|
+test "skill tool execution research-search" {
+  let registry = default_skill_registry()
+  let result = registry.execute_skill_tool("research-search", "database options")
+  match result {
+    Success(content) => {
+      assert_eq(content.contains("Research search results"), true)
+      assert_eq(content.contains("database options"), true)
+    }
+    Failure(_) => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill tool execution review-analyze" {
+  let registry = default_skill_registry()
+  let result = registry.execute_skill_tool("review-analyze", "auth module")
+  match result {
+    Success(content) => {
+      assert_eq(content.contains("Code review analysis"), true)
+      assert_eq(content.contains("Correctness"), true)
+    }
+    Failure(_) => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill tool execution test-create" {
+  let registry = default_skill_registry()
+  let result = registry.execute_skill_tool("test-create", "user login")
+  match result {
+    Success(content) => {
+      assert_eq(content.contains("Test plan"), true)
+      assert_eq(content.contains("user login"), true)
+    }
+    Failure(_) => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill tool execution docs-generate" {
+  let registry = default_skill_registry()
+  let result = registry.execute_skill_tool("docs-generate", "REST API")
+  match result {
+    Success(content) => {
+      assert_eq(content.contains("Documentation outline"), true)
+      assert_eq(content.contains("REST API"), true)
+    }
+    Failure(_) => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill tool execution unknown tool fails" {
+  let registry = default_skill_registry()
+  let result = registry.execute_skill_tool("nonexistent-tool", "input")
+  match result {
+    Success(_) => assert_eq(false, true)
+    Failure(reason) => assert_eq(reason.contains("Unknown skill tool"), true)
+  }
+}
+
+///|
+test "agent with skills includes skill tools" {
+  let agent = default_agent()
+  let mut has_research = false
+  let mut has_scaffold = false
+  for t in agent.tools {
+    if t.spec.name == "research-search" { has_research = true }
+    if t.spec.name == "scaffold" { has_scaffold = true }
+  }
+  assert_eq(has_research, true)
+  assert_eq(has_scaffold, true)
+}
+
+///|
+test "agent with skills system prompt includes skill instructions" {
+  let agent = default_agent()
+  assert_eq(agent.config.system_prompt.contains("[research Skill]"), true)
+  assert_eq(agent.config.system_prompt.contains("[testing Skill]"), true)
+}
+
+///|
+test "agent with skills runs research goal with skill tools" {
+  let agent = default_agent()
+  let trace = agent.run_trace("research the best architecture for microservices")
+  assert_eq(render_run_state(trace.state), "completed")
+  let mut has_research_tool = false
+  for obs in trace.observations {
+    if obs.contains("research-search") || obs.contains("research-summarize") {
+      has_research_tool = true
+    }
+  }
+  assert_eq(has_research_tool, true)
+}
+
+///|
+test "agent with skills runs test goal with skill tools" {
+  let agent = default_agent()
+  let trace = agent.run_trace("write tests for the authentication module")
+  assert_eq(render_run_state(trace.state), "completed")
+  let mut has_test_tool = false
+  for obs in trace.observations {
+    if obs.contains("test-create") || obs.contains("test-coverage") {
+      has_test_tool = true
+    }
+  }
+  assert_eq(has_test_tool, true)
+}
+
+///|
+test "skill render list" {
+  let registry = default_skill_registry()
+  let list = registry.render_skill_list()
+  assert_eq(list.contains("Loaded skills:"), true)
+  assert_eq(list.contains("research"), true)
+  assert_eq(list.contains("code-review"), true)
+}
+
+///|
+test "skill render detail" {
+  let registry = default_skill_registry()
+  let detail = registry.render_skill_detail("research")
+  assert_eq(detail.contains("Skill: research"), true)
+  assert_eq(detail.contains("research-search"), true)
+  assert_eq(detail.contains("research-summarize"), true)
+  assert_eq(detail.contains("Keywords:"), true)
+}
+
+///|
+test "skill render detail nonexistent" {
+  let registry = default_skill_registry()
+  let detail = registry.render_skill_detail("nonexistent")
+  assert_eq(detail.contains("Skill not found"), true)
+}
+
+///|
+test "cli parses --skills flag" {
+  let args = parse_args(["--skills"])
+  assert_eq(args.show_skills, true)
+}
+
+///|
+test "cli parses --skill flag" {
+  let args = parse_args(["--skill", "research"])
+  assert_eq(args.show_skill, "research")
+}
+
+///|
+test "cli parses --skill= flag" {
+  let args = parse_args(["--skill=research"])
+  assert_eq(args.show_skill, "research")
+}

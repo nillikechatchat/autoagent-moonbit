@@ -81,6 +81,8 @@ show_help() {
   echo "  /config          Show runtime configuration"
   echo "  /history         Show current session log"
   echo "  /memory          Show memory files"
+  echo "  /skills          List available skills"
+  echo "  /skill NAME      Show skill details"
   echo "  /run N           Set max steps for future turns"
   echo "  /save TEXT       Append TEXT to experience memory"
   echo "  /quit            Exit"
@@ -147,6 +149,12 @@ chat_loop() {
         ;;
       /memory)
         show_memory
+        ;;
+      /skills)
+        "$BINARY" --skills
+        ;;
+      /skill\ *)
+        "$BINARY" --skill "${input#/skill }"
         ;;
       /quit|/exit)
         echo "Session saved: $session_file"

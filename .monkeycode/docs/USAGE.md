@@ -88,6 +88,8 @@ moon run src/main -- [OPTIONS] [GOAL]
 | `-h, --help` | 显示帮助信息 |
 | `-v, --version` | 显示版本信息 |
 | `-c, --config` | 显示当前配置 |
+| `--skills` | 列出可用 skills |
+| `--skill <NAME>` | 查看 skill 详情 |
 | `--max-steps <N>` | 覆盖最大步骤数 |
 | `--verbose` | 显示详细 trace 输出 |
 
@@ -131,6 +133,8 @@ moon run src/main -- --verbose --max-steps 2 "design a REST API"
 | `/config` | 显示运行时配置 |
 | `/history` | 输出当前会话日志 |
 | `/memory` | 输出记忆文件位置 |
+| `/skills` | 列出可用 skills |
+| `/skill NAME` | 查看 skill 详情 |
 | `/run N` | 调整后续轮次的最大步骤数 |
 | `/save TEXT` | 将经验写入 `experiences.md` |
 | `/quit` | 退出并保留会话日志 |

@@ -14,6 +14,7 @@ pub(all) struct Agent {
   provider : Provider
   memory : MemoryRouter
   tools : Array[Tool]
+  skills : SkillRegistry
 }
 
 ///|
@@ -28,6 +29,37 @@ pub fn Agent::new(
     provider,
     memory: MemoryRouter::new(),
     tools,
+    skills: SkillRegistry::new(),
+  }
+}
+
+///|
+pub fn Agent::with_skills(
+  config : AgentConfig,
+  provider : Provider,
+  tools : Array[Tool],
+  skills : SkillRegistry,
+) -> Agent {
+  let all_tools : Array[Tool] = []
+  for t in tools {
+    all_tools.push(t)
+  }
+  let skill_tools = skills.all_tools()
+  for t in skill_tools {
+    all_tools.push(t)
+  }
+  let tool_names : Array[String] = []
+  for t in all_tools {
+    tool_names.push(t.spec.name)
+  }
+  let system_prompt = config.system_prompt + "\n\n" + skills.all_instructions()
+  {
+    config: { ..config, system_prompt },
+    planner: Planner::new_with_tools(config.max_steps, tool_names),
+    provider,
+    memory: MemoryRouter::new(),
+    tools: all_tools,
+    skills,
   }
 }
 
@@ -110,7 +142,7 @@ fn Agent::invoke_step(self : Agent, s : Step) -> StepResult {
   match find_tool(self.tools, s.action) {
     Some(tool) => {
       if tool.spec.risk == Low {
-        let result = tool.execute(s.input)
+        let result = self.execute_with_skills(tool, s.input)
         match result {
           Success(content) => {
             if content.length() > self.config.max_tool_output_length {
@@ -130,8 +162,23 @@ fn Agent::invoke_step(self : Agent, s : Step) -> StepResult {
 }
 
 ///|
+fn Agent::execute_with_skills(self : Agent, tool : Tool, input : String) -> StepResult {
+  let builtin_result = tool.execute(input)
+  match builtin_result {
+    Success(_) => builtin_result
+    Failure(reason) => {
+      if reason.contains("Unknown tool") {
+        self.skills.execute_skill_tool(tool.spec.name, input)
+      } else {
+        builtin_result
+      }
+    }
+  }
+}
+
+///|
 pub fn default_agent() -> Agent {
-  Agent::new(
+  Agent::with_skills(
     {
       name: "AutoAgent",
       system_prompt: "Help users build lightweight agents from scratch and use agents well.",
@@ -145,5 +192,6 @@ pub fn default_agent() -> Agent {
       Tool::new("checklist", "Generate a safe usage checklist.", "safety", Low),
       Tool::new("coach", "Coach the user through agent operation.", "education", Low),
     ],
+    default_skill_registry(),
   )
 }

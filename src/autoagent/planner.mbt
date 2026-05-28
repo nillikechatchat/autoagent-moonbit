@@ -34,11 +34,23 @@ pub fn Planner::plan(self : Planner, goal : String) -> Array[Step] {
     }
   }
 
-  // Ensure minimum coverage
+  // Ensure minimum coverage: if no skill tools matched, add default tools
   if planned.length() == 0 {
     for tool_name in self.available_tools {
       if id <= self.max_steps && !used.contains(tool_name) {
         planned.push(step(id, tool_name, goal, "Default step for coverage."))
+        id = id + 1
+      }
+    }
+  }
+
+  // If skill tools were selected but defaults are missing, add them if room
+  if planned.length() > 0 {
+    let defaults = ["scaffold", "checklist", "coach"]
+    for d in defaults {
+      if id <= self.max_steps && !used.contains(d) && self.available_tools.contains(d) {
+        planned.push(step(id, d, goal, get_tool_reason(d, goal)))
+        used.push(d)
         id = id + 1
       }
     }
@@ -70,6 +82,46 @@ fn select_tools_for_goal(goal : String, available : Array[String]) -> Array[Stri
   if lower.contains("learn") || lower.contains("teach") || lower.contains("how") || lower.contains("guide") || lower.contains("improve") {
     if available.contains("coach") && !selected.contains("coach") {
       selected.push("coach")
+    }
+  }
+
+  // Research skill tools
+  if lower.contains("research") || lower.contains("investigate") || lower.contains("study") || lower.contains("find information") {
+    if available.contains("research-search") && !selected.contains("research-search") {
+      selected.push("research-search")
+    }
+    if available.contains("research-summarize") && !selected.contains("research-summarize") {
+      selected.push("research-summarize")
+    }
+  }
+
+  // Code review skill tools
+  if lower.contains("review") || lower.contains("refactor") || lower.contains("code quality") || lower.contains("clean code") {
+    if available.contains("review-analyze") && !selected.contains("review-analyze") {
+      selected.push("review-analyze")
+    }
+    if available.contains("review-suggest") && !selected.contains("review-suggest") {
+      selected.push("review-suggest")
+    }
+  }
+
+  // Docs skill tools
+  if lower.contains("document") || lower.contains("docs") || lower.contains("explain") || lower.contains("readme") || lower.contains("guide") {
+    if available.contains("docs-generate") && !selected.contains("docs-generate") {
+      selected.push("docs-generate")
+    }
+    if available.contains("docs-explain") && !selected.contains("docs-explain") {
+      selected.push("docs-explain")
+    }
+  }
+
+  // Testing skill tools
+  if lower.contains("test") || lower.contains("coverage") || lower.contains("qa") || lower.contains("tdd") {
+    if available.contains("test-create") && !selected.contains("test-create") {
+      selected.push("test-create")
+    }
+    if available.contains("test-coverage") && !selected.contains("test-coverage") {
+      selected.push("test-coverage")
     }
   }
 
@@ -106,6 +158,14 @@ fn get_tool_reason(tool_name : String, goal : String) -> String {
     "scaffold" => "Create the smallest useful agent skeleton."
     "checklist" => "Make safe operation explicit before tool growth."
     "coach" => "Teach the user how to iterate on the agent."
+    "research-search" => "Search for relevant sources and patterns."
+    "research-summarize" => "Synthesize findings into actionable summary."
+    "review-analyze" => "Analyze code quality across correctness, readability, safety."
+    "review-suggest" => "Suggest specific, prioritized improvements."
+    "docs-generate" => "Generate structured documentation outline."
+    "docs-explain" => "Explain concepts with definitions and examples."
+    "test-create" => "Create comprehensive test plan for the component."
+    "test-coverage" => "Identify coverage gaps and recommend additions."
     _ => "Execute " + tool_name + " for the goal."
   }
 }

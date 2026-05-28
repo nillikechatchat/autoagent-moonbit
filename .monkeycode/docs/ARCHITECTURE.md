@@ -66,6 +66,41 @@ graph TD
 - `checklist`：生成安全和上线检查清单。网站 chatbot 目标会包含角色、输入、允许工具、记忆策略、停止条件和 launch gate。
 - `coach`：生成交互式操作工作流。网站 chatbot 目标会包含初始化、逐轮测试、经验沉淀、偏好记忆和集成节奏。
 
+### Skill System
+
+文件：`src/autoagent/skill.mbt`
+
+Skill 系统提供可扩展的能力模块。每个 Skill 包含：
+
+- `name`：skill 名称
+- `description`：描述
+- `category`：分类
+- `instructions`：系统提示扩展
+- `tools`：skill 专属工具
+- `keywords`：触发关键词
+
+核心组件：
+
+- `Skill`：单个 skill 定义。
+- `SkillTool`：skill 专属工具定义。
+- `SkillRegistry`：skill 注册表，管理加载、查找、选择和执行。
+
+内置 Skills：
+
+| Skill | 工具 | 触发关键词 |
+|-------|------|-----------|
+| research | research-search, research-summarize | research, investigate, study |
+| code-review | review-analyze, review-suggest | review, refactor, code quality |
+| docs | docs-generate, docs-explain | document, docs, explain, README |
+| testing | test-create, test-coverage | test, coverage, QA, TDD |
+
+集成方式：
+
+1. `Agent::with_skills` 将 skill 工具合并到 Agent 工具列表。
+2. Skill 指令注入到系统提示中。
+3. Planner 根据 goal 关键词选择相关 skill 工具。
+4. 工具执行时先尝试内置实现，再尝试 skill 工具。
+
 ### Interactive Shell
 
 文件：`scripts/autoagent.sh`、`scripts/repl.sh`

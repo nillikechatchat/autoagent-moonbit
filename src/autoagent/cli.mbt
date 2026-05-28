@@ -4,6 +4,8 @@ pub(all) struct CliArgs {
   mut show_help : Bool
   mut show_version : Bool
   mut show_config : Bool
+  mut show_skills : Bool
+  mut show_skill : String
   mut max_steps : Int?
   mut verbose : Bool
 }
@@ -15,6 +17,8 @@ pub fn default_cli_args() -> CliArgs {
     show_help: false,
     show_version: false,
     show_config: false,
+    show_skills: false,
+    show_skill: "",
     max_steps: None,
     verbose: false,
   }
@@ -35,6 +39,13 @@ pub fn parse_args(args : Array[String]) -> CliArgs {
       result.show_config = true
     } else if arg == "--verbose" {
       result.verbose = true
+    } else if arg == "--skills" {
+      result.show_skills = true
+    } else if arg == "--skill" && i + 1 < args.length() {
+      i = i + 1
+      result.show_skill = args[i]
+    } else if arg.has_prefix("--skill=") {
+      result.show_skill = arg[:][8:].to_owned()
     } else if arg == "--max-steps" && i + 1 < args.length() {
       i = i + 1
       result.max_steps = try {
@@ -91,6 +102,8 @@ pub fn show_help() -> Unit {
   println("  -h, --help             Show this help message")
   println("  -v, --version          Show version information")
   println("  -c, --config           Show current configuration")
+  println("  --skills               List available skills")
+  println("  --skill <NAME>         Show skill details")
   println("  --max-steps <N>        Override maximum steps (default: 3)")
   println("  --verbose              Show detailed trace output")
   println("")

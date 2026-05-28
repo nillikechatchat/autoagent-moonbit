@@ -498,6 +498,91 @@ pub fn Config::is_deterministic(self : Config) -> Bool
 
 判断是否为确定性 Provider 模式。
 
+## Skill System
+
+Defined in `src/autoagent/skill.mbt`.
+
+### Skill
+
+```moonbit
+pub(all) struct Skill {
+  name : String
+  description : String
+  category : String
+  instructions : String
+  tools : Array[SkillTool]
+  keywords : Array[String]
+}
+```
+
+### SkillTool
+
+```moonbit
+pub(all) struct SkillTool {
+  name : String
+  description : String
+  category : String
+  risk : RiskLevel
+}
+```
+
+### SkillRegistry
+
+```moonbit
+pub(all) struct SkillRegistry {
+  mut skills : Array[Skill]
+}
+```
+
+### default_skill_registry
+
+```moonbit
+pub fn default_skill_registry() -> SkillRegistry
+```
+
+返回包含 4 个内置 skill 的注册表。
+
+### SkillRegistry::register
+
+```moonbit
+pub fn SkillRegistry::register(self : SkillRegistry, skill : Skill) -> Unit
+```
+
+### SkillRegistry::find
+
+```moonbit
+pub fn SkillRegistry::find(self : SkillRegistry, name : String) -> Skill?
+```
+
+### SkillRegistry::select_for_goal
+
+```moonbit
+pub fn SkillRegistry::select_for_goal(self : SkillRegistry, goal : String) -> Array[Skill]
+```
+
+根据 goal 关键词选择相关 skills。
+
+### SkillRegistry::execute_skill_tool
+
+```moonbit
+pub fn SkillRegistry::execute_skill_tool(self : SkillRegistry, tool_name : String, input : String) -> StepResult
+```
+
+执行 skill 专属工具。
+
+### Agent::with_skills
+
+```moonbit
+pub fn Agent::with_skills(
+  config : AgentConfig,
+  provider : Provider,
+  tools : Array[Tool],
+  skills : SkillRegistry,
+) -> Agent
+```
+
+创建带 skill 支持的 Agent。skill 工具自动合并，skill 指令注入系统提示。
+
 ## Test Interface
 
 Defined in `src/autoagent/agent_test.mbt`.

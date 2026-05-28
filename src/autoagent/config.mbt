@@ -38,7 +38,7 @@ pub fn default_agent_app_config() -> AgentAppConfig {
   {
     name: "AutoAgent",
     system_prompt: "Help users build lightweight agents from scratch and use agents well.",
-    max_steps: 3,
+    max_steps: 5,
     max_goal_length: 1000,
     max_tool_output_length: 500,
   }

@@ -25,6 +25,18 @@ fn main {
     return
   }
 
+  let skills = @autoagent.default_skill_registry()
+
+  if cli.show_skills {
+    println(skills.render_skill_list())
+    return
+  }
+
+  if cli.show_skill != "" {
+    println(skills.render_skill_detail(cli.show_skill))
+    return
+  }
+
   if cli.goal == "" {
     println(@autoagent.banner())
     println(@autoagent.header("AutoAgent is ready"))
@@ -50,7 +62,7 @@ fn main {
     None => config.to_agent_config()
   }
 
-  let agent = @autoagent.Agent::new(
+  let agent = @autoagent.Agent::with_skills(
     agent_config,
     @autoagent.Provider::new(config.provider.name),
     [
@@ -58,6 +70,7 @@ fn main {
       @autoagent.Tool::new("checklist", "Generate a safe usage checklist.", "safety", Low),
       @autoagent.Tool::new("coach", "Coach the user through agent operation.", "education", Low),
     ],
+    @autoagent.default_skill_registry(),
   )
 
   if cli.verbose {

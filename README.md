@@ -1,6 +1,6 @@
 # AutoAgent
 
-AutoAgent 是一个使用 MoonBit 编写的轻量级 Agent Runtime。当前版本提供初始化、交互式会话、分层记忆目录、确定性本地运行和可审计 trace，目标是让用户从一次性 demo 进入可持续迭代的 Agent 工作流。
+AutoAgent 是一个使用 MoonBit 编写的轻量级 Agent Runtime。当前版本提供初始化、交互式会话、分层记忆目录、skill 扩展系统、确定性本地运行和可审计 trace，目标是让用户从一次性 demo 进入可持续迭代的 Agent 工作流。
 
 ## Design Goals
 
@@ -112,6 +112,41 @@ moon run src/main -- --verbose "create a research assistant"
 This project has been verified with `moonc v0.9.3+b53c2807d` and `moon 0.1.20260522`.
 
 Running without a goal prints the interactive entrypoints. Use `make repl` or `./scripts/autoagent.sh chat` for ongoing work.
+
+## Skills
+
+AutoAgent 支持 skill 扩展系统。内置 4 个 skill，提供 8 个专用工具：
+
+| Skill | 工具 | 说明 |
+|-------|------|------|
+| research | research-search, research-summarize | 信息搜索与综合 |
+| code-review | review-analyze, review-suggest | 代码质量分析与改进建议 |
+| docs | docs-generate, docs-explain | 文档生成与概念解释 |
+| testing | test-create, test-coverage | 测试计划与覆盖率分析 |
+
+Skill 工具根据 goal 关键词自动选择。例如：
+
+- `research the best database` → 自动使用 research-search + research-summarize
+- `write unit tests for my API` → 自动使用 test-create + test-coverage
+- `review my code quality` → 自动使用 review-analyze + review-suggest
+
+### 查看 Skills
+
+```bash
+# 列出所有 skills
+./_build/native/release/build/src/main/main.exe --skills
+
+# 查看单个 skill 详情
+./_build/native/release/build/src/main/main.exe --skill research
+```
+
+### 交互式 Shell 中使用
+
+```bash
+make repl
+/skills          # 列出所有 skills
+/skill research  # 查看 research skill 详情
+```
 
 ## Interactive Workflow
 
