@@ -1,0 +1,32 @@
+[
+  {
+    "role": "user",
+    "content": "say hello in one sentence",
+    "time": "2026-05-28T13:49:39.223015"
+  },
+  {
+    "role": "assistant",
+    "content": "Error: No API key configured. Set OPENAI_API_KEY or MCAI_LLM_API_KEY environment variable, or configure in .autoagent/config.json",
+    "time": "2026-05-28T13:49:39.223426"
+  },
+  {
+    "role": "user",
+    "content": "say hello in one sentence",
+    "time": "2026-05-28T13:50:02.807654"
+  },
+  {
+    "role": "assistant",
+    "content": "LLM API error 403: Forbidden",
+    "time": "2026-05-28T13:50:02.950114"
+  },
+  {
+    "role": "user",
+    "content": "test message",
+    "time": "2026-05-28T13:50:54.606138"
+  },
+  {
+    "role": "assistant",
+    "content": "test response",
+    "time": "2026-05-28T13:50:54.606357"
+  }
+]

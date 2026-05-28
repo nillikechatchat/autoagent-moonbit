@@ -1,6 +1,6 @@
 # AutoAgent
 
-AutoAgent 是一个使用 MoonBit 编写的轻量级 Agent Runtime。当前版本提供初始化、交互式会话、分层记忆目录、skill 扩展系统、确定性本地运行和可审计 trace，目标是让用户从一次性 demo 进入可持续迭代的 Agent 工作流。
+AutoAgent 是一个轻量级 Agent Runtime，支持真实 LLM 对话、文件读写、命令执行和记忆持久化。MoonBit 提供架构核心（planner、tools、memory、skills），Python 提供 I/O 层（LLM API、文件系统、网络搜索）。
 
 ## Design Goals
 
@@ -76,42 +76,42 @@ graph TD
         └── moon.pkg
 ```
 
-## Usage
-
-Install the MoonBit toolchain from the official MoonBit distribution, then run:
+## Quick Start
 
 ```bash
-# Install MoonBit toolchain on Linux or macOS
-curl -fsSL https://cli.moonbitlang.cn/install/unix.sh | bash
-
-# Build the project
-moon build
-
-# Run tests
-moon test
-
-# Initialize AutoAgent workspace
-make init
-
-# Start an interactive session
+# Start interactive agent
 make repl
 
-# Run one-shot mode with a custom goal
-moon run src/main -- "build a chatbot for my website"
+# Or directly
+python3 scripts/agent.py
 
-# Show help
-moon run src/main -- --help
-
-# Show configuration
-moon run src/main -- --config
-
-# Verbose output
-moon run src/main -- --verbose "create a research assistant"
+# Single-shot mode
+python3 scripts/agent.py run "read README.md"
 ```
 
-This project has been verified with `moonc v0.9.3+b53c2807d` and `moon 0.1.20260522`.
+### 真实能力
 
-Running without a goal prints the interactive entrypoints. Use `make repl` or `./scripts/autoagent.sh chat` for ongoing work.
+| 能力 | 实现 | 状态 |
+|------|------|------|
+| LLM 对话 | OpenAI 兼容 API（可配置） | 需要 API key |
+| 文件读写 | `read_file`, `write_file` | 工作中 |
+| 命令执行 | `run_command` | 工作中 |
+| 网络搜索 | `search_web` | 依赖网络 |
+| 记忆持久化 | JSON 文件存储 | 工作中 |
+| 会话历史 | 自动保存到 sessions/ | 工作中 |
+
+### 配置 LLM
+
+```bash
+# 环境变量
+export OPENAI_API_KEY=sk-...
+export MCAI_LLM_BASE_URL=https://api.openai.com/v1
+export MCAI_LLM_MODEL=gpt-4o-mini
+
+# 或编辑 .autoagent/config.json
+```
+
+无 API key 时使用规则引擎（自动检测文件操作）。
 
 ## Skills
 

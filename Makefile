@@ -63,12 +63,12 @@ run: build-native
 run-wasm: build-wasm
 	PATH="$$HOME/.moon/bin:$$PATH" moon run src/main $(ARGS)
 
-repl: build-native
-	@chmod +x scripts/autoagent.sh scripts/repl.sh
+repl:
+	@chmod +x scripts/autoagent.sh scripts/agent.py
 	@./scripts/autoagent.sh chat
 
 chat: repl
 
-init: build-native
+init:
 	@chmod +x scripts/autoagent.sh
 	@./scripts/autoagent.sh init
