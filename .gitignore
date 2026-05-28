@@ -93,6 +93,9 @@
 **/go.work
 **/Cargo.lock
 
+# MoonBit
+_build/
+
 # Ruby
 *.gem
 *.rbc

@@ -1,0 +1,8 @@
+import {
+  "autoagent/autoagent/src/autoagent",
+  "moonbitlang/core/env",
+}
+
+options(
+  "is-main": true,
+)
