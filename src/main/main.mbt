@@ -39,16 +39,16 @@ fn main {
 
   if cli.goal == "" {
     println(@autoagent.banner())
-    println(@autoagent.header("AutoAgent is ready"))
-    println("Use interactive mode for real work:")
+    println(@autoagent.info("Ready. Type a message or goal:"))
+    println("")
+    println("  Examples:")
+    println("  > build a chatbot for my website")
+    println("  > research the best database for my project")
+    println("  > write tests for my auth module")
+    println("")
+    println("  Or use the interactive shell:")
     println("  make repl")
     println("  ./scripts/autoagent.sh")
-    println("")
-    println("Use one-shot mode for a single goal:")
-    println("  moon run src/main -- \"build a chatbot for my website\"")
-    println("")
-    println("Initialize workspace files:")
-    println("  ./scripts/autoagent.sh init")
     return
   }
 

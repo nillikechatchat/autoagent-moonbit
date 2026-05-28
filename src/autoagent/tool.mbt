@@ -36,27 +36,27 @@ pub fn find_tool(tools : Array[Tool], name : String) -> Tool? {
 ///|
 pub fn scaffold_agent(goal : String) -> String {
   if is_website_chatbot_goal(goal) {
-    "Implementation scaffold for '\{goal}':\n1. Frontend widget: floating chat button, chat panel, message list, input box, loading state, error state, and mobile layout.\n2. Backend API: POST /api/chat with session_id, message, page_url, and optional user_id. Return assistant message, citations, and next_action.\n3. Agent runtime: system prompt, provider adapter, tool allowlist, short-term session memory, user preference memory, and stop condition.\n4. Knowledge source: start with FAQ/content markdown, then add retrieval over indexed website docs.\n5. Safety: rate limit, max input length, low-risk tools by default, no secret echoing, and human handoff for account or payment issues.\n6. First acceptance test: user asks one FAQ, backend returns a grounded answer, frontend renders it, and the transcript is stored."
+    "Here is a plan for '\{goal}':\n\n1. Frontend: floating chat button, message list, input box, mobile layout.\n2. Backend: POST /api/chat with session_id, message, page_url.\n3. Agent: system prompt, tool registry, session memory, stop condition.\n4. Knowledge: start with FAQ markdown, add retrieval later.\n5. Safety: rate limit, max input length, human handoff.\n6. First test: one FAQ question, grounded answer, transcript stored.\n\nStart with step 1 and iterate."
   } else {
-    "Implementation scaffold for '\{goal}':\n1. Define the user-facing workflow and one acceptance test.\n2. Create agent core, provider adapter, tool registry, memory store, and CLI or API entrypoint.\n3. Add one low-risk tool first and block medium/high-risk tools until approval exists.\n4. Store session messages in short-term memory and stable preferences in user memory.\n5. Run one dry run, inspect the trace, then add the smallest production integration."
+    "Here is a plan for '\{goal}':\n\n1. Define the workflow and one acceptance test.\n2. Create agent core, tool registry, memory, and entrypoint.\n3. Add one low-risk tool first.\n4. Store session messages in memory.\n5. Run one dry run, then add the smallest production integration.\n\nStart with step 1."
   }
 }
 
 ///|
 pub fn coach_agent(goal : String) -> String {
   if is_website_chatbot_goal(goal) {
-    "Operator workflow for '\{goal}':\n1. Run init to create config, workspace, memory, and session folders.\n2. Start chat mode and test one visitor question at a time.\n3. Save good answers into experience memory and bad answers as regression cases.\n4. Promote repeated visitor preferences into user memory.\n5. Add one integration per release: website content retrieval, CRM handoff, analytics, then admin dashboard."
+    "How to iterate on '\{goal}':\n\n1. Run init to set up workspace and memory.\n2. Test one visitor question at a time.\n3. Save good answers as experiences.\n4. Promote repeated preferences to user memory.\n5. Add one integration per release: content retrieval, then CRM, then analytics.\n\nTry the first question now."
   } else {
-    "Operator workflow for '\{goal}':\n1. Start with one goal and inspect the plan.\n2. Run only low-risk tools automatically.\n3. Store useful outcomes into memory.\n4. Turn repeated failures into tests or checklist items.\n5. Add production integrations only after the dry run is stable."
+    "How to iterate on '\{goal}':\n\n1. Start with one specific goal.\n2. Run only low-risk tools.\n3. Store useful outcomes in memory.\n4. Turn failures into tests.\n5. Add integrations only after the dry run works.\n\nTry your first goal now."
   }
 }
 
 ///|
 pub fn agent_checklist(goal : String) -> String {
   if is_website_chatbot_goal(goal) {
-    "Checklist for '\{goal}':\n- Role: answer website visitor questions and route unresolved issues.\n- Inputs: message, session_id, page_url, locale, and optional user_id.\n- Allowed tools: FAQ retrieval, website search, ticket creation, and analytics logging.\n- Memory policy: sidecar for current chat, user layer for preferences, experiences for validated answers, archive for long transcripts.\n- Stop condition: answer delivered, clarification requested, or handoff created.\n- Launch gate: 10 FAQ tests pass, abuse prompts are refused, and fallback path is visible."
+    "Checklist for '\{goal}':\n\n- Role: answer visitor questions, route unresolved issues.\n- Inputs: message, session_id, page_url.\n- Tools: FAQ search, ticket creation, analytics.\n- Memory: current chat in session, preferences in user layer.\n- Stop: answer delivered, clarification needed, or handoff.\n- Launch: 10 FAQ tests pass, abuse prompts refused."
   } else {
-    "Checklist for '\{goal}':\n- Define the agent role and success criteria.\n- Define allowed tools and risk levels.\n- Define memory policy and retention.\n- Define stop conditions and failure handling.\n- Run one dry run with trace output.\n- Add one production integration after the dry run passes."
+    "Checklist for '\{goal}':\n\n- Define the role and success criteria.\n- Define allowed tools and risk levels.\n- Define memory policy.\n- Define stop conditions.\n- Run one dry run.\n- Add one integration after it passes."
   }
 }
 

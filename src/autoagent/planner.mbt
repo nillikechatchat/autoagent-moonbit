@@ -148,25 +148,25 @@ fn get_tool_reason(tool_name : String, goal : String) -> String {
   let lower = goal[:].to_lower().to_owned()
   if lower.contains("chatbot") && lower.contains("website") {
     match tool_name {
-      "scaffold" => return "Create website chatbot architecture and first acceptance test."
-      "checklist" => return "Make visitor safety, memory, and launch gates explicit."
-      "coach" => return "Guide interactive iteration from FAQ to production integration."
+      "scaffold" => return "Setting up the website chatbot architecture."
+      "checklist" => return "Defining safety and launch requirements."
+      "coach" => return "Planning the iteration workflow."
       _ => ()
     }
   }
   match tool_name {
-    "scaffold" => "Create the smallest useful agent skeleton."
-    "checklist" => "Make safe operation explicit before tool growth."
-    "coach" => "Teach the user how to iterate on the agent."
-    "research-search" => "Search for relevant sources and patterns."
-    "research-summarize" => "Synthesize findings into actionable summary."
-    "review-analyze" => "Analyze code quality across correctness, readability, safety."
-    "review-suggest" => "Suggest specific, prioritized improvements."
-    "docs-generate" => "Generate structured documentation outline."
-    "docs-explain" => "Explain concepts with definitions and examples."
-    "test-create" => "Create comprehensive test plan for the component."
-    "test-coverage" => "Identify coverage gaps and recommend additions."
-    _ => "Execute " + tool_name + " for the goal."
+    "scaffold" => "Setting up the foundation."
+    "checklist" => "Defining safety requirements."
+    "coach" => "Planning how to iterate."
+    "research-search" => "Searching for relevant sources."
+    "research-summarize" => "Summarizing findings."
+    "review-analyze" => "Analyzing code quality."
+    "review-suggest" => "Suggesting improvements."
+    "docs-generate" => "Generating documentation outline."
+    "docs-explain" => "Explaining the concept."
+    "test-create" => "Creating test plan."
+    "test-coverage" => "Checking coverage gaps."
+    _ => "Running " + tool_name + "."
   }
 }
 

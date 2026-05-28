@@ -223,54 +223,42 @@ fn execute_builtin_skill_tool(skill_name : String, tool_name : String, input : S
 
 ///|
 fn research_search(query : String) -> String {
-  "Research search results for '\{query}':\n\n1. Official documentation and API references for the topic.\n2. Community guides and best practices from experienced practitioners.\n3. Academic papers and technical blog posts with in-depth analysis.\n4. Open source implementations and working examples.\n5. Related frameworks and comparison articles.\n\nNext step: read the top 3 sources, extract key patterns, and save validated findings to experience memory."
+  "Here is what I found for '\{query}':\n\n1. Official docs and API references.\n2. Community guides and best practices.\n3. Technical blog posts with examples.\n4. Open source implementations.\n5. Comparison articles.\n\nWant me to summarize the key findings?"
 }
 
 ///|
 fn research_summarize(topic : String) -> String {
-  "Research summary for '\{topic}':\n\nKey findings:\n- The topic has well-established patterns in production systems.\n- Common pitfalls include insufficient error handling, missing edge cases, and lack of observability.\n- Recommended approach: start with the simplest working version, add tests, then optimize.\n\nAction items:\n1. Create a minimal prototype.\n2. Write 3-5 acceptance tests.\n3. Document known limitations.\n4. Iterate based on real usage data."
+  "Summary for '\{topic}':\n\n- Well-established patterns exist in production systems.\n- Common pitfalls: missing error handling, no observability.\n- Recommended: start simple, add tests, then optimize.\n\nNext steps:\n1. Build a minimal prototype.\n2. Write 3-5 acceptance tests.\n3. Document known limitations."
 }
-
-// ============================================================
-// Code Review skill tools
-// ============================================================
 
 ///|
 fn review_analyze(code_desc : String) -> String {
-  "Code review analysis for '\{code_desc}':\n\nQuality dimensions:\n1. Correctness: Does it handle edge cases? Are error paths covered?\n2. Readability: Are names clear? Is the flow easy to follow?\n3. Design: Single responsibility? Appropriate abstraction level?\n4. Safety: Any injection risks? Proper input validation?\n5. Performance: Any obvious bottlenecks? Unnecessary allocations?\n\nFindings:\n- Review the happy path and error paths separately.\n- Check for missing null/empty checks.\n- Verify that public APIs have clear contracts.\n- Look for hardcoded values that should be configurable."
+  "Reviewing '\{code_desc}':\n\n1. Correctness: edge cases covered? Error paths handled?\n2. Readability: names clear? Flow easy to follow?\n3. Design: single responsibility? Right abstraction?\n4. Safety: input validation? Injection risks?\n5. Performance: bottlenecks? Unnecessary allocations?\n\nFocus on correctness first, then readability."
 }
 
 ///|
 fn review_suggest(area : String) -> String {
-  "Improvement suggestions for '\{area}':\n\n1. Add input validation at the boundary layer.\n2. Extract complex logic into named helper functions.\n3. Add unit tests for each error path.\n4. Document the 'why' behind non-obvious decisions.\n5. Consider adding structured logging for observability.\n\nPriority: focus on correctness first, then readability, then performance."
+  "Suggestions for '\{area}':\n\n1. Add input validation at boundaries.\n2. Extract complex logic into named helpers.\n3. Add unit tests for each error path.\n4. Document the 'why' behind non-obvious decisions.\n5. Add structured logging for observability.\n\nPriority: correctness > readability > performance."
 }
-
-// ============================================================
-// Documentation skill tools
-// ============================================================
 
 ///|
 fn docs_generate(subject : String) -> String {
-  "Documentation outline for '\{subject}':\n\n# \{subject}\n\n## Overview\nWhat it does and why it exists.\n\n## Quick Start\nMinimal example to get running.\n\n## API Reference\nPublic types, functions, parameters, and return values.\n\n## Examples\nCommon use cases with code.\n\n## Configuration\nAvailable options and their defaults.\n\n## Troubleshooting\nCommon errors and how to fix them.\n\nNext step: fill in each section with project-specific content."
+  "Documentation outline for '\{subject}':\n\n# \{subject}\n\n## Overview\nWhat it does and why.\n\n## Quick Start\nMinimal example.\n\n## API Reference\nTypes, functions, parameters.\n\n## Examples\nCommon use cases.\n\n## Configuration\nOptions and defaults.\n\n## Troubleshooting\nCommon errors and fixes.\n\nWant me to fill in any section?"
 }
 
 ///|
 fn docs_explain(concept : String) -> String {
-  "Concept explanation for '\{concept}':\n\nWhat it is:\n- A clear, one-paragraph definition.\n\nHow it works:\n- Step-by-step mechanism.\n\nWhen to use it:\n- Appropriate use cases.\n\nWhen NOT to use it:\n- Anti-patterns and alternatives.\n\nExample:\n- A minimal, working code example."
+  "About '\{concept}':\n\nWhat: a clear definition.\nHow: step-by-step mechanism.\nWhen to use: appropriate cases.\nWhen not: anti-patterns and alternatives.\nExample: minimal working code.\n\nWant me to go deeper on any part?"
 }
-
-// ============================================================
-// Testing skill tools
-// ============================================================
 
 ///|
 fn test_create(component : String) -> String {
-  "Test plan for '\{component}':\n\nUnit tests:\n1. Happy path: normal input produces expected output.\n2. Boundary: empty input, max length, zero values.\n3. Error: invalid input, missing required fields.\n\nIntegration tests:\n1. End-to-end flow with real dependencies.\n2. Failure injection: what happens when a dependency fails?\n\nAcceptance tests:\n1. User-facing behavior matches specification.\n2. Error messages are clear and actionable.\n\nFirst test to write: the happy path with the most common input."
+  "Test plan for '\{component}':\n\nUnit tests:\n1. Happy path: normal input, expected output.\n2. Boundary: empty, max length, zero.\n3. Error: invalid input, missing fields.\n\nIntegration tests:\n1. End-to-end with real deps.\n2. Failure injection.\n\nFirst test to write: happy path with most common input."
 }
 
 ///|
 fn test_coverage(scope : String) -> String {
-  "Coverage analysis for '\{scope}':\n\nCurrent coverage gaps:\n- Error handling paths often lack tests.\n- Edge cases in string parsing and numeric conversion.\n- Race conditions in concurrent code.\n\nRecommended additions:\n1. One test per error return in the public API.\n2. One test per boundary value (0, 1, max, min).\n3. One test per configuration combination that affects behavior.\n\nTarget: 80% line coverage with 100% coverage of public API error paths."
+  "Coverage gaps in '\{scope}':\n\n- Error handling paths often untested.\n- Edge cases in parsing and conversion.\n- Race conditions in concurrent code.\n\nRecommended:\n1. One test per error return.\n2. One test per boundary value.\n3. One test per config combo.\n\nTarget: 80% line, 100% public API error paths."
 }
 
 ///|
