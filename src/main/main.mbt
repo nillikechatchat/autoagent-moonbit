@@ -25,11 +25,22 @@ fn main {
     return
   }
 
-  let goal = if cli.goal == "" {
-    "build a research assistant that can plan, call safe tools, and teach the user how to improve prompts"
-  } else {
-    cli.goal
+  if cli.goal == "" {
+    println(@autoagent.banner())
+    println(@autoagent.header("AutoAgent is ready"))
+    println("Use interactive mode for real work:")
+    println("  make repl")
+    println("  ./scripts/autoagent.sh")
+    println("")
+    println("Use one-shot mode for a single goal:")
+    println("  moon run src/main -- \"build a chatbot for my website\"")
+    println("")
+    println("Initialize workspace files:")
+    println("  ./scripts/autoagent.sh init")
+    return
   }
+
+  let goal = cli.goal
 
   let agent_config = match cli.max_steps {
     Some(steps) => {
@@ -49,9 +60,8 @@ fn main {
     ],
   )
 
-  println(@autoagent.banner())
-
   if cli.verbose {
+    println(@autoagent.banner())
     println(@autoagent.info("Running in verbose mode..."))
     println(@autoagent.divider())
     let trace = agent.run_trace(goal)
@@ -60,10 +70,7 @@ fn main {
     println(@autoagent.divider())
     println(@autoagent.format_run_summary(trace))
   } else {
-    println(@autoagent.info("Goal: " + goal))
-    println(@autoagent.divider())
     let trace = agent.run_trace(goal)
-    println(@autoagent.format_trace(trace))
-    println(@autoagent.format_answer(trace.answer))
+    println(trace.answer)
   }
 }

@@ -364,6 +364,28 @@ test "tool help for unknown tool" {
 }
 
 ///|
+test "website chatbot scaffold is concrete" {
+  let output = scaffold_agent("build a chatbot for my website")
+  assert_eq(output.contains("POST /api/chat"), true)
+  assert_eq(output.contains("Frontend widget"), true)
+  assert_eq(output.contains("Knowledge source"), true)
+}
+
+///|
+test "website chatbot checklist includes launch gate" {
+  let output = agent_checklist("build a chatbot for my website")
+  assert_eq(output.contains("Launch gate"), true)
+  assert_eq(output.contains("Memory policy"), true)
+}
+
+///|
+test "planner gives website chatbot reason" {
+  let planner = Planner::new(3)
+  let steps = planner.plan("build a chatbot for my website")
+  assert_eq(steps[0].reason.contains("website chatbot"), true)
+}
+
+///|
 test "config creates provider correctly" {
   let config = default_config()
   let provider = config.to_provider()

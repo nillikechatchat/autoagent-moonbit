@@ -46,23 +46,28 @@ PATH="$HOME/.moon/bin:$PATH" moon build
 # Run tests
 PATH="$HOME/.moon/bin:$PATH" moon test
 
-# Run demo
-PATH="$HOME/.moon/bin:$PATH" moon run src/main
+# Initialize workspace
+make init
+
+# Start interactive session
+make repl
 ```
 
 ### 第一个 Agent
 
-编辑 `src/main/main.mbt`，修改目标字符串：
+启动交互式 shell：
 
-```moonbit
-fn main {
-  let agent = @autoagent.default_agent()
-  let goal = "build a chatbot that answers FAQ about my product"
-  println(agent.run(goal))
-}
+```bash
+make repl
 ```
 
-运行后你会看到三步计划的输出：脚手架建议、安全检查清单、使用指导。
+输入目标：
+
+```txt
+build a chatbot for my website
+```
+
+运行后会得到面向目标的实施脚手架、安全检查清单和操作工作流。会话会保存到 `.autoagent/workspace/sessions/`。
 
 ---
 
@@ -72,6 +77,7 @@ fn main {
 
 ```bash
 moon run src/main -- [OPTIONS] [GOAL]
+./scripts/autoagent.sh [init|chat|run]
 ```
 
 ### 参数
@@ -88,6 +94,12 @@ moon run src/main -- [OPTIONS] [GOAL]
 ### 示例
 
 ```bash
+# 初始化工作区
+./scripts/autoagent.sh init
+
+# 启动交互式会话
+./scripts/autoagent.sh chat
+
 # 显示帮助
 moon run src/main -- --help
 
@@ -109,6 +121,19 @@ moon run src/main -- --verbose "create a research assistant"
 # 组合使用
 moon run src/main -- --verbose --max-steps 2 "design a REST API"
 ```
+
+### 交互式命令
+
+| 命令 | 说明 |
+|------|------|
+| `/help` | 显示交互式命令 |
+| `/status` | 显示当前工作区、会话和步数 |
+| `/config` | 显示运行时配置 |
+| `/history` | 输出当前会话日志 |
+| `/memory` | 输出记忆文件位置 |
+| `/run N` | 调整后续轮次的最大步骤数 |
+| `/save TEXT` | 将经验写入 `experiences.md` |
+| `/quit` | 退出并保留会话日志 |
 
 ### 详细输出模式
 

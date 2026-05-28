@@ -2,7 +2,7 @@
 
 ## 架构目标
 
-AutoAgent 的目标是提供一个可阅读、可扩展、可教学的轻量 Agent Runtime。当前实现优先展示 Agent 的核心骨架：Agent Core、Planner、Tool、Memory 和 Provider。
+AutoAgent 的目标是提供一个可阅读、可扩展、可交互的轻量 Agent Runtime。当前实现包含 Agent Core、Planner、Tool、Memory、Provider、CLI 入口和 Shell 会话层。
 
 ## 高层结构
 
@@ -46,13 +46,13 @@ graph TD
 
 文件：`src/autoagent/planner.mbt`
 
-`Planner` 使用 `max_steps` 控制返回步骤数量。当前计划固定为：
+`Planner` 使用 `max_steps` 控制返回步骤数量，并根据目标关键词选择工具。新项目和构建类目标优先使用 `scaffold`，安全、测试和审查类目标优先加入 `checklist`，学习和指导类目标优先加入 `coach`。
 
 1. `scaffold`
 2. `checklist`
 3. `coach`
 
-该模块的设计重点是隔离规划逻辑，让后续动态规划器替换时保持 `Agent` 主流程稳定。
+对于 `build a chatbot for my website` 这类目标，Planner 会生成网站聊天机器人专属的执行理由。该模块的设计重点是隔离规划逻辑，让后续动态规划器替换时保持 `Agent` 主流程稳定。
 
 ### Tool Registry
 
@@ -62,9 +62,21 @@ graph TD
 
 当前工具：
 
-- `scaffold`：生成搭建 Agent 的文件和测试建议。
-- `checklist`：生成安全使用检查清单。
-- `coach`：生成使用 Agent 的操作建议。
+- `scaffold`：生成实施脚手架。网站 chatbot 目标会包含前端 widget、`POST /api/chat`、Provider、记忆、知识源、安全和首个验收测试。
+- `checklist`：生成安全和上线检查清单。网站 chatbot 目标会包含角色、输入、允许工具、记忆策略、停止条件和 launch gate。
+- `coach`：生成交互式操作工作流。网站 chatbot 目标会包含初始化、逐轮测试、经验沉淀、偏好记忆和集成节奏。
+
+### Interactive Shell
+
+文件：`scripts/autoagent.sh`、`scripts/repl.sh`
+
+Shell 会话层负责真实初始化和交互：
+
+1. `init` 创建 `.autoagent/config.json` 和 `.autoagent/workspace/`。
+2. `chat` 创建会话日志并进入交互循环。
+3. 每轮输入调用 MoonBit 原生二进制执行一次 Agent run。
+4. 每轮输出写入 `.autoagent/workspace/sessions/`。
+5. `/save TEXT` 将经验追加到 `.autoagent/workspace/memory/experiences.md`。
 
 ### Memory
 

@@ -1,12 +1,13 @@
 # AutoAgent
 
-AutoAgent 是一个使用 MoonBit 编写的轻量级 Agent 原型，目标是帮助用户从零搭建 Agent，并通过检查清单、脚手架建议和使用指导把 Agent 用好。
+AutoAgent 是一个使用 MoonBit 编写的轻量级 Agent Runtime。当前版本提供初始化、交互式会话、分层记忆目录、确定性本地运行和可审计 trace，目标是让用户从一次性 demo 进入可持续迭代的 Agent 工作流。
 
 ## Design Goals
 
 - Lightweight core: Agent loop, planner, memory, provider, and tools are separate modules.
 - Learnable architecture: each component is small enough to read directly.
-- Safe defaults: the default tools only generate text guidance.
+- Interactive workflow: `init` creates workspace files and `chat` keeps a persisted session log.
+- Safe defaults: the default tools only generate text guidance and run low-risk tools.
 - Extensible shape: replace `Provider`, add `Tool`, or customize `Planner` to grow the runtime.
 
 ## Core Flow
@@ -89,10 +90,13 @@ moon build
 # Run tests
 moon test
 
-# Run with default goal
-moon run src/main
+# Initialize AutoAgent workspace
+make init
 
-# Run with custom goal
+# Start an interactive session
+make repl
+
+# Run one-shot mode with a custom goal
 moon run src/main -- "build a chatbot for my website"
 
 # Show help
@@ -107,7 +111,32 @@ moon run src/main -- --verbose "create a research assistant"
 
 This project has been verified with `moonc v0.9.3+b53c2807d` and `moon 0.1.20260522`.
 
-The demo goal is defined in `src/main/main.mbt`. Change that string to try a different Agent-building workflow.
+Running without a goal prints the interactive entrypoints. Use `make repl` or `./scripts/autoagent.sh chat` for ongoing work.
+
+## Interactive Workflow
+
+```bash
+# Build and initialize .autoagent/workspace
+make init
+
+# Start an interactive shell
+make repl
+```
+
+The interactive shell creates:
+
+- `.autoagent/workspace/sessions/` for session transcripts.
+- `.autoagent/workspace/memory/user.md` for stable user preferences.
+- `.autoagent/workspace/memory/experiences.md` for validated outcomes and regressions.
+- `.autoagent/workspace/memory/archive.md` for long transcripts.
+
+Useful session commands:
+
+- `/status` shows the active workspace and session file.
+- `/history` prints the current session log.
+- `/memory` shows memory file locations.
+- `/save TEXT` appends an experience to memory.
+- `/run N` changes max steps for later turns.
 
 ## Build & Package
 
@@ -180,6 +209,9 @@ cd autoagent
 | `make test` | 运行测试 |
 | `make check` | 类型检查 |
 | `make dist` | 创建发布包 |
+| `make init` | 初始化 `.autoagent/workspace` |
+| `make chat` | 启动交互式会话 |
+| `make repl` | 启动交互式会话 |
 | `make clean` | 清理构建产物 |
 | `make run` | 构建并运行 |
 | `make run ARGS="--help"` | 构建并运行（带参数） |

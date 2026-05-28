@@ -38,9 +38,16 @@ pub fn Provider::complete_trace(self : Provider, trace : RunTrace) -> String {
 
 ///|
 fn deterministic_complete(provider : Provider, trace : RunTrace) -> String {
-  let mut body = "AutoAgent provider=\{provider.name}\nGoal: \{trace.goal}\nState: \{render_run_state(trace.state)}\nStop: \{render_stop_reason(trace.stop_reason)}"
+  let mut body = "AutoAgent provider=\{provider.name}\n"
+  body = body + "Goal: \{trace.goal}\n"
+  body = body + "State: \{render_run_state(trace.state)}\n"
+  body = body + "Stop: \{render_stop_reason(trace.stop_reason)}\n\n"
+  body = body + "Plan output:\n"
   for observation in trace.observations {
-    body = body + "\n- " + observation
+    body = body + "\n" + observation + "\n"
+  }
+  if trace.state == Completed {
+    body = body + "\nNext action: run the interactive shell, choose one acceptance test, and iterate from the saved session log."
   }
   body
 }

@@ -1,4 +1,7 @@
 #!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$SCRIPT_DIR/autoagent.sh" chat "$@"
+
 # AutoAgent Interactive REPL - Beginner Friendly
 # Usage: ./scripts/repl.sh [OPTIONS]
 

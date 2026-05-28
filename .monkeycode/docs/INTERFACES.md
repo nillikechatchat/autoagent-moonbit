@@ -370,15 +370,37 @@ CLI 入口，支持以下参数：
 运行方式：
 
 ```bash
-# Run with default goal
+# Print interactive entrypoints
 moon run src/main
 
-# Run with custom goal
+# Run one-shot mode with custom goal
 moon run src/main -- "build a chatbot"
 
 # Show help
 moon run src/main -- --help
 ```
+
+## Interactive Shell Entry
+
+Defined in `scripts/autoagent.sh`.
+
+```bash
+./scripts/autoagent.sh init
+./scripts/autoagent.sh chat
+./scripts/autoagent.sh run "build a chatbot for my website"
+```
+
+Shell commands:
+
+| 命令 | 说明 |
+|------|------|
+| `init` | 创建 `.autoagent/config.json`、sessions、memory 和 artifacts 目录 |
+| `chat` | 创建会话日志并进入交互循环 |
+| `run` | 调用原生二进制执行一次 one-shot run |
+| `/status` | 输出当前 workspace、session 和 max steps |
+| `/history` | 输出当前会话日志 |
+| `/memory` | 输出记忆文件位置 |
+| `/save TEXT` | 追加经验记忆 |
 
 ## CLI Module
 

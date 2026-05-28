@@ -1,4 +1,4 @@
-.PHONY: all build build-native build-wasm test check clean dist help
+.PHONY: all build build-native build-wasm test check clean dist help run repl chat init
 
 # Default target
 all: check test build-native
@@ -18,6 +18,8 @@ help:
 	@echo "  make test          - Run all tests"
 	@echo "  make check         - Run type checker"
 	@echo "  make dist          - Create distribution package"
+	@echo "  make init          - Initialize AutoAgent workspace"
+	@echo "  make chat          - Start interactive AutoAgent session"
 	@echo "  make clean         - Clean build artifacts"
 	@echo "  make run           - Run with default goal"
 	@echo "  make run ARGS=     - Run with custom args"
@@ -62,5 +64,11 @@ run-wasm: build-wasm
 	PATH="$$HOME/.moon/bin:$$PATH" moon run src/main $(ARGS)
 
 repl: build-native
-	@chmod +x scripts/repl.sh
-	@./scripts/repl.sh
+	@chmod +x scripts/autoagent.sh scripts/repl.sh
+	@./scripts/autoagent.sh chat
+
+chat: repl
+
+init: build-native
+	@chmod +x scripts/autoagent.sh
+	@./scripts/autoagent.sh init

@@ -93,6 +93,15 @@ fn select_tools_for_goal(goal : String, available : Array[String]) -> Array[Stri
 
 ///|
 fn get_tool_reason(tool_name : String, goal : String) -> String {
+  let lower = goal[:].to_lower().to_owned()
+  if lower.contains("chatbot") && lower.contains("website") {
+    match tool_name {
+      "scaffold" => return "Create website chatbot architecture and first acceptance test."
+      "checklist" => return "Make visitor safety, memory, and launch gates explicit."
+      "coach" => return "Guide interactive iteration from FAQ to production integration."
+      _ => ()
+    }
+  }
   match tool_name {
     "scaffold" => "Create the smallest useful agent skeleton."
     "checklist" => "Make safe operation explicit before tool growth."
