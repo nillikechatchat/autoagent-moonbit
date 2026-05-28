@@ -51,3 +51,48 @@ pub fn Memory::summary(self : Memory) -> String {
   }
   out
 }
+
+///|
+pub fn Memory::export_json(self : Memory) -> String {
+  let mut out = "["
+  for i, msg in self.messages {
+    if i > 0 { out = out + "," }
+    out = out + "{\"role\":\"" + render_role(msg.role) + "\",\"content\":\"" + msg.content + "\"}"
+  }
+  out = out + "]"
+  out
+}
+
+///|
+pub fn Memory::message_count(self : Memory) -> Int {
+  self.messages.length()
+}
+
+///|
+pub fn Memory::total_chars(self : Memory) -> Int {
+  let mut total = 0
+  for msg in self.messages {
+    total = total + msg.content.length()
+  }
+  total
+}
+
+///|
+pub fn Memory::has_messages(self : Memory) -> Bool {
+  self.messages.length() > 0
+}
+
+///|
+pub fn Memory::last_message(self : Memory) -> Message? {
+  if self.messages.length() == 0 {
+    None
+  } else {
+    Some(self.messages[self.messages.length() - 1])
+  }
+}
+
+///|
+pub fn Memory::remove_oldest(self : Memory, count : Int) -> Unit {
+  let remaining = if count > self.messages.length() { 0 } else { self.messages.length() - count }
+  self.messages = self.messages[self.messages.length() - remaining:].map(fn(x) { x })
+}

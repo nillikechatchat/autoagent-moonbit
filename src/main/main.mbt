@@ -1,7 +1,6 @@
 ///|
 fn main {
   let args = @env.args()
-  // Skip the first argument (wasm file path)
   let user_args = if args.length() > 1 {
     args[1:].map(fn(x) { x })
   } else {
@@ -50,18 +49,21 @@ fn main {
     ],
   )
 
+  println(@autoagent.banner())
+
   if cli.verbose {
+    println(@autoagent.info("Running in verbose mode..."))
+    println(@autoagent.divider())
     let trace = agent.run_trace(goal)
-    println("=== AutoAgent Trace ===")
-    println("Goal: \{trace.goal}")
-    println("State: \{@autoagent.render_run_state(trace.state)}")
-    println("Stop: \{@autoagent.render_stop_reason(trace.stop_reason)}")
-    println("Steps: \{trace.steps.length()}")
-    println("Observations: \{trace.observations.length()}")
-    println("")
-    println("=== Answer ===")
-    println(trace.answer)
+    println(@autoagent.format_trace(trace))
+    println(@autoagent.format_answer(trace.answer))
+    println(@autoagent.divider())
+    println(@autoagent.format_run_summary(trace))
   } else {
-    println(agent.run(goal))
+    println(@autoagent.info("Goal: " + goal))
+    println(@autoagent.divider())
+    let trace = agent.run_trace(goal)
+    println(@autoagent.format_trace(trace))
+    println(@autoagent.format_answer(trace.answer))
   }
 }

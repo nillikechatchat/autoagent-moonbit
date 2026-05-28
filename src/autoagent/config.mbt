@@ -64,6 +64,29 @@ pub fn Config::to_agent_config(self : Config) -> AgentConfig {
 }
 
 ///|
+pub fn Config::to_provider(self : Config) -> Provider {
+  if self.provider.name == "deterministic" {
+    Provider::new("deterministic")
+  } else {
+    Provider::new_llm(
+      self.provider.name,
+      self.provider.model,
+      self.provider.base_url,
+      self.provider.timeout_seconds,
+    )
+  }
+}
+
+///|
+pub fn Config::to_agent(self : Config, tools : Array[Tool]) -> Agent {
+  Agent::new(
+    self.to_agent_config(),
+    self.to_provider(),
+    tools,
+  )
+}
+
+///|
 pub fn Config::is_deterministic(self : Config) -> Bool {
   self.provider.name == "deterministic"
 }

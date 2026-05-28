@@ -60,3 +60,7 @@ run: build-native
 
 run-wasm: build-wasm
 	PATH="$$HOME/.moon/bin:$$PATH" moon run src/main $(ARGS)
+
+repl: build-native
+	@chmod +x scripts/repl.sh
+	@./scripts/repl.sh

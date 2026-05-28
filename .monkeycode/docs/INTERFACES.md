@@ -256,6 +256,88 @@ pub fn Memory::reset(self : Memory) -> Unit
 
 重置 Memory，清空所有消息。
 
+## Memory Layer Module
+
+Defined in `src/autoagent/memory_layer.mbt`.
+
+### MemoryLayer
+
+```moonbit
+pub(all) enum MemoryLayer {
+  Skeleton
+  User
+  Experiences
+  Sidecar
+  Archive
+}
+```
+
+记忆分层枚举。
+
+### LayeredMemory
+
+```moonbit
+pub(all) struct LayeredMemory {
+  skeleton : Memory
+  user : Memory
+  experiences : Memory
+  sidecar : Memory
+  archive : Memory
+}
+```
+
+五层存储容器，每层有独立的容量限制。
+
+### MemoryRouter
+
+```moonbit
+pub(all) struct MemoryRouter {
+  layered : LayeredMemory
+}
+```
+
+记忆路由器，负责写入分流、读取路由和上下文恢复。
+
+### MemoryRouter::classify_and_store
+
+```moonbit
+pub fn MemoryRouter::classify_and_store(self : MemoryRouter, msg : Message) -> Unit
+```
+
+根据消息内容自动分类并写入对应层。
+
+### MemoryRouter::default_context
+
+```moonbit
+pub fn MemoryRouter::default_context(self : MemoryRouter) -> String
+```
+
+返回 Skeleton + User 层摘要（默认注入上下文）。
+
+### MemoryRouter::full_context
+
+```moonbit
+pub fn MemoryRouter::full_context(self : MemoryRouter) -> String
+```
+
+返回所有层摘要。
+
+### MemoryRouter::recall
+
+```moonbit
+pub fn MemoryRouter::recall(self : MemoryRouter, query : String) -> String
+```
+
+按关键词跨层检索匹配的消息。
+
+### MemoryRouter::restore_context
+
+```moonbit
+pub fn MemoryRouter::restore_context(self : MemoryRouter) -> String
+```
+
+按恢复顺序逐层输出上下文，用于上下文压缩后的恢复。
+
 ### Provider::complete_trace
 
 Defined in `src/autoagent/provider.mbt`.

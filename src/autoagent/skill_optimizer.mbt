@@ -1,0 +1,26 @@
+///|
+pub fn render_optimization_guide() -> String {
+  let mut out = header("=== Skill Optimization Guide ===") + "\n"
+  out = out + dim_text("Based on SkillOpt paper (arXiv 2605.23904) + Darwin 2.0") + "\n\n"
+  out = out + bold_text("4-Phase Optimization Loop:") + "\n"
+  out = out + "  1. " + ansi_cyan() + "Rollout" + ansi_reset() + " - Run real tasks with current skill\n"
+  out = out + "  2. " + ansi_cyan() + "Reflect" + ansi_reset() + " - Analyze success/failure patterns\n"
+  out = out + "  3. " + ansi_cyan() + "Edit" + ansi_reset() + " - Propose changes within text budget\n"
+  out = out + "  4. " + ansi_cyan() + "Validate" + ansi_reset() + " - Accept only if test score improves\n\n"
+  out = out + bold_text("Key Principles:") + "\n"
+  out = out + "  " + ansi_green() + "✓" + ansi_reset() + " Validation-gated: reject if score doesn't improve\n"
+  out = out + "  " + ansi_green() + "✓" + ansi_reset() + " Multi-reviewer: independent reviewers avoid bias\n"
+  out = out + "  " + ansi_green() + "✓" + ansi_reset() + " Plateau detection: stop when improvement < threshold\n"
+  out = out + "  " + ansi_green() + "✓" + ansi_reset() + " Human-in-the-loop: checkpoints for critical decisions\n\n"
+  out = out + bold_text("9 Evaluation Dimensions (SkillLens):") + "\n"
+  out = out + "  1. Failure Mode Encoding\n"
+  out = out + "  2. Actionable Specificity\n"
+  out = out + "  3. High-Risk Blacklist\n"
+  out = out + "  4. Workflow Clarity\n"
+  out = out + "  5. Checkpoint Design\n"
+  out = out + "  6. Error Handling\n"
+  out = out + "  7. Test Coverage\n"
+  out = out + "  8. Documentation Quality\n"
+  out = out + "  9. Extensibility\n"
+  out
+}

@@ -12,7 +12,7 @@ pub(all) struct Agent {
   config : AgentConfig
   planner : Planner
   provider : Provider
-  memory : Memory
+  memory : MemoryRouter
   tools : Array[Tool]
 }
 
@@ -26,7 +26,7 @@ pub fn Agent::new(
     config,
     planner: Planner::new(config.max_steps),
     provider,
-    memory: Memory::new(),
+    memory: MemoryRouter::new(),
     tools,
   }
 }
@@ -39,9 +39,9 @@ pub fn Agent::run(self : Agent, goal : String) -> String {
 
 ///|
 pub fn Agent::run_trace(self : Agent, goal : String) -> RunTrace {
-  self.memory.reset()
-  self.memory.store(message(System, self.config.system_prompt))
-  self.memory.store(message(User, goal))
+  self.memory.reset_session()
+  self.memory.classify_and_store(message(System, self.config.system_prompt))
+  self.memory.classify_and_store(message(User, goal))
   if goal.length() > self.config.max_goal_length {
     let trace = {
       goal,
@@ -51,7 +51,7 @@ pub fn Agent::run_trace(self : Agent, goal : String) -> RunTrace {
       observations: [],
       answer: "AutoAgent could not run because the goal is too long.",
     }
-    self.memory.store(message(Assistant, trace.answer))
+    self.memory.classify_and_store(message(Assistant, trace.answer))
     return trace
   }
   let steps = self.planner.plan(goal)
@@ -64,7 +64,7 @@ pub fn Agent::run_trace(self : Agent, goal : String) -> RunTrace {
       observations: [],
       answer: "AutoAgent could not run because the goal is empty.",
     }
-    self.memory.store(message(Assistant, trace.answer))
+    self.memory.classify_and_store(message(Assistant, trace.answer))
     return trace
   }
   let observations : Array[String] = []
@@ -76,12 +76,12 @@ pub fn Agent::run_trace(self : Agent, goal : String) -> RunTrace {
       Success(content) => {
         let rendered = "\{render_step(s)} => \{content}"
         observations.push(rendered)
-        self.memory.store(message(Tool, rendered))
+        self.memory.classify_and_store(message(Tool, rendered))
       }
       Failure(reason) => {
         let rendered = "\{render_step(s)} => \{reason}"
         observations.push(rendered)
-        self.memory.store(message(Tool, rendered))
+        self.memory.classify_and_store(message(Tool, rendered))
         state = Failed
         stop_reason = ToolFailure(s.action)
         break
@@ -101,7 +101,7 @@ pub fn Agent::run_trace(self : Agent, goal : String) -> RunTrace {
   }
   let answer = self.provider.complete_trace(trace)
   let completed_trace = { ..trace, answer }
-  self.memory.store(message(Assistant, answer))
+  self.memory.classify_and_store(message(Assistant, answer))
   completed_trace
 }
 

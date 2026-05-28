@@ -68,16 +68,36 @@ graph TD
 
 ### Memory
 
-文件：`src/autoagent/memory.mbt`
+文件：`src/autoagent/memory.mbt`、`src/autoagent/memory_layer.mbt`
 
-`Memory` 是运行期消息数组，支持容量限制和消息截断。当前只保存在内存中，提供：
+Memory 系统采用分层架构，参考 Hermes 记忆系统 2.0 设计：
 
-- `Memory::new`：创建默认容量 Memory（100 条，2000 字符/条）。
-- `Memory::new_with_limits`：创建自定义容量 Memory。
-- `Memory::reset`：清空所有消息。
-- `Memory::store`：追加消息，超长截断，超条数淘汰。
-- `Memory::load`：返回消息数组。
-- `Memory::summary`：渲染消息摘要。
+| 层 | 用途 | 注入时机 |
+|---|------|----------|
+| Skeleton | 系统运行必须长期知道的稳定事实 | 默认注入 |
+| User | 用户长期偏好和协作方式 | 默认注入 |
+| Experiences | 实战验证过的坑、经验、模式 | 按需检索 |
+| Sidecar | 当前会话活跃状态 | 会话内 |
+| Archive | 不适合常驻注入但需保留的材料 | 仅追溯时 |
+
+核心组件：
+
+- `Memory`：单层存储，支持容量限制和消息截断。
+- `LayeredMemory`：五层存储容器。
+- `MemoryRouter`：写入分流、读取路由、上下文恢复。
+
+写入分流规则：
+
+- `System` 角色消息 → Skeleton 层
+- `Tool`/`Assistant` 角色消息 → Sidecar 层
+- `User` 角色消息根据前缀和长度分类到不同层
+
+读取策略：
+
+- `default_context()`：返回 Skeleton + User 层摘要（默认注入）
+- `full_context()`：返回所有层摘要
+- `recall(query)`：按关键词跨层检索
+- `restore_context()`：按恢复顺序逐层输出
 
 ### Provider
 
