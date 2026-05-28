@@ -7,6 +7,7 @@ pub(all) struct CliArgs {
   mut show_skills : Bool
   mut show_skill : String
   mut max_steps : Int?
+  mut step : Int?
   mut verbose : Bool
 }
 
@@ -20,6 +21,7 @@ pub fn default_cli_args() -> CliArgs {
     show_skills: false,
     show_skill: "",
     max_steps: None,
+    step: None,
     verbose: false,
   }
 }
@@ -46,6 +48,13 @@ pub fn parse_args(args : Array[String]) -> CliArgs {
       result.show_skill = args[i]
     } else if arg.has_prefix("--skill=") {
       result.show_skill = arg[:][8:].to_owned()
+    } else if arg == "--step" && i + 1 < args.length() {
+      i = i + 1
+      result.step = try {
+        Some(@string.from_str(args[i]))
+      } catch {
+        _ => None
+      }
     } else if arg == "--max-steps" && i + 1 < args.length() {
       i = i + 1
       result.max_steps = try {

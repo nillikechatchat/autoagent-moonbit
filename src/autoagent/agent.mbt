@@ -70,6 +70,49 @@ pub fn Agent::run(self : Agent, goal : String) -> String {
 }
 
 ///|
+pub fn Agent::run_single_step(self : Agent, goal : String, step_index : Int) -> RunTrace {
+  self.memory.reset_session()
+  self.memory.classify_and_store(message(System, self.config.system_prompt))
+  self.memory.classify_and_store(message(User, goal))
+  if goal.length() > self.config.max_goal_length {
+    return { goal, state: Failed, stop_reason: InputTooLong, steps: [], observations: [], answer: "Goal is too long." }
+  }
+  let steps = self.planner.plan(goal)
+  if steps.length() == 0 {
+    return { goal, state: Failed, stop_reason: EmptyGoal, steps, observations: [], answer: "No plan generated." }
+  }
+  if step_index >= steps.length() {
+    return { goal, state: Completed, stop_reason: CompletedAllSteps, steps, observations: [], answer: "All steps completed." }
+  }
+  let s = steps[step_index]
+  let observations : Array[String] = []
+  let tool_result = self.invoke_step(s)
+  match tool_result {
+    Success(content) => {
+      let rendered = content
+      observations.push(rendered)
+      self.memory.classify_and_store(message(Tool, rendered))
+    }
+    Failure(reason) => {
+      observations.push("Error: " + reason)
+      self.memory.classify_and_store(message(Tool, "Error: " + reason))
+      let err_trace = { goal, state: Failed, stop_reason: ToolFailure(s.action), steps, observations, answer: "" }
+      let err_answer = self.provider.complete_trace(err_trace)
+      return { ..err_trace, answer: err_answer }
+    }
+  }
+  let has_more = step_index + 1 < steps.length()
+  let answer = if has_more {
+    observations[0] + "\n\nStep " + (step_index + 1).to_string() + "/" + steps.length().to_string() + " done. Continue? (yes/no)"
+  } else {
+    observations[0] + "\n\nAll steps completed."
+  }
+  let trace = { goal, state: Running, stop_reason: CompletedAllSteps, steps, observations, answer }
+  self.memory.classify_and_store(message(Assistant, answer))
+  trace
+}
+
+///|
 pub fn Agent::run_trace(self : Agent, goal : String) -> RunTrace {
   self.memory.reset_session()
   self.memory.classify_and_store(message(System, self.config.system_prompt))

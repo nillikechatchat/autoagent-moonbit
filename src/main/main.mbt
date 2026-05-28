@@ -83,7 +83,10 @@ fn main {
     println(@autoagent.divider())
     println(@autoagent.format_run_summary(trace))
   } else {
-    let trace = agent.run_trace(goal)
+    let trace = match cli.step {
+      Some(step_num) => agent.run_single_step(goal, step_num)
+      None => agent.run_trace(goal)
+    }
     println(trace.answer)
   }
 }

@@ -89,36 +89,64 @@ new_session_file() {
 run_agent() {
   local session_file="$1"
   local input="$2"
-  local context=""
-
-  # Build context from session history (last 3 exchanges)
-  if [ -f "$session_file" ]; then
-    context=$(tail -20 "$session_file" 2>/dev/null | tr '\n' ' ' | head -c 500)
-  fi
-
-  local full_input="$input"
-  if [ -n "$context" ]; then
-    full_input="[context: ${context}]
-
-${input}"
-  fi
 
   printf '\n'
-  thinking
   printf '  \033[1;36m>\033[0m %s\n' "$input"
   printf '\n'
 
-  local output
-  output=$("$BINARY" --max-steps "$MAX_STEPS" "$full_input" 2>&1) || true
+  # Step 0: plan
+  thinking
+  local plan_output
+  plan_output=$("$BINARY" --max-steps "$MAX_STEPS" --step 0 "$input" 2>&1) || true
   done_msg
 
-  # Display output with word wrapping
-  printf '%s\n' "$output"
+  printf '%s\n' "$plan_output"
   printf '\n'
 
   # Save to session
   printf '## User\n%s\n\n' "$input" >> "$session_file"
-  printf '## Assistant\n%s\n\n' "$output" >> "$session_file"
+  printf '## Assistant (step 0)\n%s\n\n' "$plan_output" >> "$session_file"
+
+  # Multi-turn: ask to continue
+  local step=1
+  while [ "$step" -lt "$MAX_STEPS" ]; do
+    printf '\033[2m  Continue? [Y/n]\033[0m '
+    local cont=""
+    IFS= read -r cont || break
+    cont=$(printf '%s' "$cont" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    # Default to yes on empty input
+    [ -z "$cont" ] && cont="y"
+
+    case "$cont" in
+      [yY]|[yY][eE][sS])
+        thinking
+        local step_output
+        step_output=$("$BINARY" --max-steps "$MAX_STEPS" --step "$step" "$input" 2>&1) || true
+        done_msg
+
+        printf '\n%s\n' "$step_output"
+        printf '\n'
+
+        printf '## Assistant (step %d)\n%s\n\n' "$step" "$step_output" >> "$session_file"
+
+        # Check if all steps done
+        if echo "$step_output" | grep -q "All steps completed"; then
+          break
+        fi
+        ;;
+      [nN]|[nN][oO])
+        printf '  \033[2mStopped at step %d.\033[0m\n' "$step"
+        printf '## Assistant\nStopped at step %d.\n\n' "$step" >> "$session_file"
+        break
+      ;;
+      *)
+        printf '  \033[2mStopped.\033[0m\n'
+        break
+        ;;
+    esac
+    step=$((step + 1))
+  done
 }
 
 chat_loop() {
