@@ -119,6 +119,8 @@ fn exec_run_command(input : String) -> ToolResult {
     "iptables", "useradd", "userdel", "passwd ",
     "git rm", "git clean", "docker rm", "docker rmi",
     "--delete", "DROP TABLE", "DROP DATABASE", "TRUNCATE",
+    "chmod 777", "chmod +s", "chown root",
+    "> /dev/", "format ", "mkfs",
   ]
   let lower = input.to_lower()
   for b in blocked {
