@@ -162,9 +162,52 @@ pub fn LLMConfig::chat_stream(self : LLMConfig, messages : Array[LLMMessage]) ->
 }
 
 ///|
-/// Call LLM API and return parsed content.
+/// Call LLM API with retry logic.
 ///
-pub fn LLMConfig::chat_content(self : LLMConfig, messages : Array[LLMMessage]) -> String {
-  let resp = self.chat(messages)
-  parse_llm_response(resp)
+pub fn LLMConfig::chat_with_retry(self : LLMConfig, messages : Array[LLMMessage], max_retries~ : Int = 3) -> String {
+  let mut attempt = 0
+  let mut last_error = ""
+  while attempt < max_retries {
+    let resp = self.chat(messages)
+    if resp != "" {
+      let content = parse_llm_response(resp)
+      if content != "" {
+        return content
+      }
+      last_error = "Empty response from LLM"
+    } else {
+      last_error = "HTTP request failed"
+    }
+    attempt = attempt + 1
+    if attempt < max_retries {
+      // Simple backoff: print retry message
+      println(ansi_yellow() + "  retry " + attempt.to_string() + "/" + max_retries.to_string() + "..." + ansi_reset())
+    }
+  }
+  last_error
+}
+
+///|
+/// Call LLM API with streaming and retry logic.
+///
+pub fn LLMConfig::chat_stream_with_retry(self : LLMConfig, messages : Array[LLMMessage], max_retries~ : Int = 3) -> String {
+  let mut attempt = 0
+  let mut last_error = ""
+  while attempt < max_retries {
+    let resp = self.chat_stream(messages)
+    if resp != "" {
+      let content = parse_llm_response(resp)
+      if content != "" {
+        return content
+      }
+      last_error = "Empty response from LLM"
+    } else {
+      last_error = "HTTP request failed"
+    }
+    attempt = attempt + 1
+    if attempt < max_retries {
+      println(ansi_yellow() + "  retry " + attempt.to_string() + "/" + max_retries.to_string() + "..." + ansi_reset())
+    }
+  }
+  last_error
 }

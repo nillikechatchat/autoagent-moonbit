@@ -79,6 +79,19 @@ pub(all) enum ResponseAction {
 }
 
 ///|
+/// Parse response with error recovery.
+///
+pub fn parse_response_safe(response : String) -> ResponseAction {
+  if response == "" { return Reply("") }
+  try {
+    parse_response(response)
+  } catch {
+    // If parsing fails, treat as plain reply
+    _ => Reply(response)
+  }
+}
+
+///|
 /// Run a single agent turn: plan → call LLM → parse → execute tools → loop
 ///
 pub fn ReplState::run_turn(self : ReplState, user_input : String) -> String {
@@ -111,9 +124,9 @@ pub fn ReplState::run_turn(self : ReplState, user_input : String) -> String {
     // Show thinking indicator
     print_thinking()
 
-    // Call LLM with streaming
+    // Call LLM with retry
     let start_time = time_ms()
-    let response = self.config.chat_stream(all_messages)
+    let response = self.config.chat_stream_with_retry(all_messages)
     let elapsed = time_ms() - start_time
 
     if response == "" {
@@ -125,8 +138,8 @@ pub fn ReplState::run_turn(self : ReplState, user_input : String) -> String {
     // Show timing
     print_timing(elapsed)
 
-    // Parse response
-    match parse_response(response) {
+    // Parse response with error recovery
+    match parse_response_safe(response) {
       Reply(text) => {
         final_reply = text
         break
@@ -210,8 +223,22 @@ pub fn run_repl(config : LLMConfig, session_dir : String, memory_file : String) 
         println(session)
       }
       "/skills" => {
-        println("Built-in tools: read_file, write_file, list_files, run_command, search_web")
+        println("Built-in tools: read_file, write_file, list_files, run_command, search_web, find_files, git_status, git_diff")
         println("Skills: research, code-review, docs, testing, code-gen, debug, refactor")
+      }
+      "/export" => {
+        let ts = exec_command("date +%Y%m%d-%H%M%S")
+        let export_path = ".autoagent/workspace/export-" + ts.trim().to_owned() + ".md"
+        let now = exec_command("date")
+        let content = "# AutoAgent Session Export\n\n"
+        let content = content + "Date: " + now.trim().to_owned() + "\n\n"
+        let content = content + "## Conversation\n\n"
+        for m in state.messages {
+          let role = if m.role == "user" { "**User**" } else { "**Assistant**" }
+          let content = content + "### " + role + "\n\n" + m.content + "\n\n"
+        }
+        ignore(write_file(export_path, content))
+        print_info("Exported to " + export_path)
       }
       "/config" => {
         println("Model: " + state.config.model)
@@ -407,10 +434,12 @@ fn print_help() -> Unit {
   println("    /config    Show current configuration")
   println("    /status    Show session status")
   println("    /resume    Resume previous session from memory")
+  println("    /export    Export session to Markdown file")
   println("    /quit      Exit")
   println("")
   println(ansi_bold() + "  Tools:" + ansi_reset())
-  println("    read_file, write_file, list_files, run_command, search_web")
+  println("    read_file, write_file, list_files, run_command, search_web,")
+  println("    find_files, git_status, git_diff")
   println("")
   println(ansi_bold() + "  Skills:" + ansi_reset())
   println("    research, code-review, docs, testing, code-gen, debug, refactor")
