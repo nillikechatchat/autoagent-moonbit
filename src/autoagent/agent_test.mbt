@@ -939,3 +939,122 @@ test "response parser handles empty" {
     CallTool(_, _) => assert_eq(false, true)
   }
 }
+
+// ============================================================
+// Edge case tests (mature product quality)
+// ============================================================
+
+///|
+test "json field handles missing field" {
+  let json = "{\"cmd\":\"parse\"}"
+  assert_eq(json_field(json, "missing"), "")
+}
+
+///|
+test "json field handles empty json" {
+  assert_eq(json_field("", "key"), "")
+}
+
+///|
+test "json field handles nested json" {
+  let json = "{\"data\":{\"name\":\"test\"}}"
+  let result = json_field(json, "data")
+  assert_eq(result.contains("\"name\""), true)
+  assert_eq(result.contains("test"), true)
+}
+
+///|
+test "esc handles special characters" {
+  let escaped = esc("line1\nline2\ttab\"quote\\back")
+  assert_eq(escaped.contains("\\n"), true)
+  assert_eq(escaped.contains("\\t"), true)
+  assert_eq(escaped.contains("\\\""), true)
+  assert_eq(escaped.contains("\\\\"), true)
+}
+
+///|
+test "conversation handles multiple tool calls" {
+  let conversation = Conversation::new()
+  conversation.add("assistant", "First\n```tool\n{\"name\":\"read_file\",\"input\":\"a.txt\"}\n```")
+  conversation.add("user", "[read_file result]: content")
+  conversation.add("assistant", "Second\n```tool\n{\"name\":\"list_files\",\"input\":\".\"}\n```")
+  match conversation.extract_tool_call() {
+    Some((name, _)) => assert_eq(name, "list_files")
+    None => assert_eq(false, true)
+  }
+}
+
+///|
+test "conversation handles no tool call" {
+  let conversation = Conversation::new()
+  conversation.add("assistant", "Just a regular message")
+  assert_eq(conversation.has_tool_calls(), false)
+  match conversation.extract_tool_call() {
+    Some(_) => assert_eq(false, true)
+    None => assert_eq(true, true)
+  }
+}
+
+///|
+test "planner returns correct steps for build goal" {
+  let planner = Planner::new(3)
+  let steps = planner.plan("build a REST API")
+  assert_eq(steps.length(), 3)
+  assert_eq(steps[0].action, "scaffold")
+}
+
+///|
+test "planner returns correct steps for test goal" {
+  let planner = Planner::new(3)
+  let steps = planner.plan("write tests for auth")
+  assert_eq(steps.length(), 3)
+  let mut has_checklist = false
+  for s in steps {
+    if s.action == "checklist" { has_checklist = true }
+  }
+  assert_eq(has_checklist, true)
+}
+
+///|
+test "memory handles empty state" {
+  let memory = Memory::new()
+  assert_eq(memory.message_count(), 0)
+  assert_eq(memory.summary(), "")
+}
+
+///|
+test "memory handles large messages" {
+  let memory = Memory::new_with_limits(5, 100)
+  let mut i = 0
+  while i < 10 {
+    memory.store(message(User, "message " + i.to_string()))
+    i = i + 1
+  }
+  assert_eq(memory.message_count() <= 5, true)
+}
+
+///|
+test "skill registry handles empty goal" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("")
+  assert_eq(selected.length(), 0)
+}
+
+///|
+test "skill registry handles unknown keyword" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("xyzabc123")
+  assert_eq(selected.length(), 0)
+}
+
+///|
+test "eval suite runs all cases" {
+  let suite = default_eval_suite()
+  let results = suite.run(fn(input) { "reply to: " + input })
+  assert_eq(results.length(), 8)
+  let mut all_passed = true
+  for r in results {
+    if !r.passed { all_passed = false }
+  }
+  assert_eq(all_passed, true)
+}

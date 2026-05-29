@@ -34,29 +34,31 @@ pub fn LLMConfig::from_env_and_file(config_path : String) -> LLMConfig {
       try {
         let parsed = @json.parse(config_json)
         match parsed {
-          Object(root) => {
-            let provider = root.get("provider")
-            match provider {
+          Object(obj) => {
+            match obj.get("provider") {
               Some(p) => {
-                if p is Object(po) {
-                  if api_key == "" {
-                    match po.get("api_key") {
-                      Some(k) => { if k is Json::String(s) { api_key = s } }
-                      None => ()
+                match p {
+                  Object(pobj) => {
+                    if api_key == "" {
+                      match pobj.get("api_key") {
+                        Some(k) => { if k is String(s) { api_key = s } }
+                        None => ()
+                      }
+                    }
+                    if base_url == "" {
+                      match pobj.get("base_url") {
+                        Some(u) => { if u is String(s) { base_url = s } }
+                        None => ()
+                      }
+                    }
+                    if model == "" {
+                      match pobj.get("model") {
+                        Some(m) => { if m is String(s) { model = s } }
+                        None => ()
+                      }
                     }
                   }
-                  if base_url == "" {
-                    match po.get("base_url") {
-                      Some(u) => { if u is Json::String(s) { base_url = s } }
-                      None => ()
-                    }
-                  }
-                  if model == "" {
-                    match po.get("model") {
-                      Some(m) => { if m is Json::String(s) { model = s } }
-                      None => ()
-                    }
-                  }
+                  _ => ()
                 }
               }
               None => ()
@@ -68,10 +70,14 @@ pub fn LLMConfig::from_env_and_file(config_path : String) -> LLMConfig {
     }
   }
 
+  // Validate and apply defaults
+  let base_url = if base_url == "" { "https://proxy.monkeycode-ai.com/v1" } else { base_url }
+  let model = if model == "" { "monkeycode-basic/qwen3.5-plus" } else { model }
+
   {
-    base_url: if base_url == "" { "https://proxy.monkeycode-ai.com/v1" } else { base_url },
-    api_key: api_key,
-    model: if model == "" { "monkeycode-basic/qwen3.5-plus" } else { model },
+    base_url,
+    api_key,
+    model,
     timeout_seconds: 60,
   }
 }
