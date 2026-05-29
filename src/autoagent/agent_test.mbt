@@ -431,7 +431,7 @@ test "anti patterns list" {
 test "skill registry has 4 built-in skills" {
   let registry = default_skill_registry()
   let names = registry.names()
-  assert_eq(names.length(), 4)
+  assert_eq(names.length(), 7)
   assert_eq(names.contains("research"), true)
   assert_eq(names.contains("code-review"), true)
   assert_eq(names.contains("docs"), true)
@@ -510,7 +510,7 @@ test "skill registry select for docs goal" {
 test "skill registry all_tools returns 8 tools" {
   let registry = default_skill_registry()
   let tools = registry.all_tools()
-  assert_eq(tools.length(), 8)
+  assert_eq(tools.length(), 14)
 }
 
 ///|
@@ -716,4 +716,226 @@ test "conversation removes fenced tool block from reply" {
   assert_eq(cleaned.contains("```tool"), false)
   assert_eq(cleaned.contains("Before"), true)
   assert_eq(cleaned.contains("After"), true)
+}
+
+// ============================================================
+// Integration tests (Codex principle: integration > unit for agents)
+// ============================================================
+
+///|
+test "skill registry has 7 built-in skills" {
+  let registry = default_skill_registry()
+  let names = registry.names()
+  assert_eq(names.length(), 7)
+  assert_eq(names.contains("research"), true)
+  assert_eq(names.contains("code-review"), true)
+  assert_eq(names.contains("docs"), true)
+  assert_eq(names.contains("testing"), true)
+  assert_eq(names.contains("code-gen"), true)
+  assert_eq(names.contains("debug"), true)
+  assert_eq(names.contains("refactor"), true)
+}
+
+///|
+test "skill registry all_tools returns 14 tools" {
+  let registry = default_skill_registry()
+  let tools = registry.all_tools()
+  assert_eq(tools.length(), 14)
+}
+
+///|
+test "skill registry code-gen tools" {
+  let registry = default_skill_registry()
+  let s = registry.find("code-gen")
+  match s {
+    Some(skill) => {
+      assert_eq(skill.name, "code-gen")
+      assert_eq(skill.tools.length(), 2)
+      assert_eq(skill.has_tool("codegen-implement"), true)
+      assert_eq(skill.has_tool("codegen-scaffold"), true)
+    }
+    None => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill registry debug tools" {
+  let registry = default_skill_registry()
+  let s = registry.find("debug")
+  match s {
+    Some(skill) => {
+      assert_eq(skill.name, "debug")
+      assert_eq(skill.tools.length(), 2)
+      assert_eq(skill.has_tool("debug-diagnose"), true)
+      assert_eq(skill.has_tool("debug-fix"), true)
+    }
+    None => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill registry refactor tools" {
+  let registry = default_skill_registry()
+  let s = registry.find("refactor")
+  match s {
+    Some(skill) => {
+      assert_eq(skill.name, "refactor")
+      assert_eq(skill.tools.length(), 2)
+      assert_eq(skill.has_tool("refactor-extract"), true)
+      assert_eq(skill.has_tool("refactor-simplify"), true)
+    }
+    None => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill tool execution codegen-implement" {
+  let registry = default_skill_registry()
+  let result = registry.execute_skill_tool("codegen-implement", "user authentication")
+  match result {
+    Success(content) => {
+      assert_eq(content.contains("Implementation plan"), true)
+      assert_eq(content.contains("user authentication"), true)
+      assert_eq(content.contains("TDD"), true)
+    }
+    Failure(_) => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill tool execution debug-diagnose" {
+  let registry = default_skill_registry()
+  let result = registry.execute_skill_tool("debug-diagnose", "login fails intermittently")
+  match result {
+    Success(content) => {
+      assert_eq(content.contains("Diagnosing"), true)
+      assert_eq(content.contains("Reproduce"), true)
+      assert_eq(content.contains("Root cause"), true)
+    }
+    Failure(_) => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill tool execution refactor-extract" {
+  let registry = default_skill_registry()
+  let result = registry.execute_skill_tool("refactor-extract", "complex parsing logic")
+  match result {
+    Success(content) => {
+      assert_eq(content.contains("Extract refactoring"), true)
+      assert_eq(content.contains("ONE thing"), true)
+    }
+    Failure(_) => assert_eq(false, true)
+  }
+}
+
+///|
+test "skill registry select for debug goal" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("debug the login error")
+  let mut has_debug = false
+  for s in selected {
+    if s.name == "debug" { has_debug = true }
+  }
+  assert_eq(has_debug, true)
+}
+
+///|
+test "skill registry select for generate goal" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("generate a REST API handler")
+  let mut has_codegen = false
+  for s in selected {
+    if s.name == "code-gen" { has_codegen = true }
+  }
+  assert_eq(has_codegen, true)
+}
+
+///|
+test "skill registry select for refactor goal" {
+  let registry = default_skill_registry()
+  let selected = registry.select_for_goal("refactor the auth module")
+  let mut has_refactor = false
+  for s in selected {
+    if s.name == "refactor" { has_refactor = true }
+  }
+  assert_eq(has_refactor, true)
+}
+
+///|
+test "agent with skills includes all skill tools" {
+  let agent = default_agent()
+  let mut has_codegen = false
+  let mut has_debug = false
+  let mut has_refactor = false
+  let mut has_research = false
+  for t in agent.tools {
+    if t.spec.name == "codegen-implement" { has_codegen = true }
+    if t.spec.name == "debug-diagnose" { has_debug = true }
+    if t.spec.name == "refactor-extract" { has_refactor = true }
+    if t.spec.name == "research-search" { has_research = true }
+  }
+  assert_eq(has_codegen, true)
+  assert_eq(has_debug, true)
+  assert_eq(has_refactor, true)
+  assert_eq(has_research, true)
+}
+
+///|
+test "agent with skills system prompt includes all skill instructions" {
+  let agent = default_agent()
+  assert_eq(agent.config.system_prompt.contains("[research Skill]"), true)
+  assert_eq(agent.config.system_prompt.contains("[code-gen Skill]"), true)
+  assert_eq(agent.config.system_prompt.contains("[debug Skill]"), true)
+  assert_eq(agent.config.system_prompt.contains("[refactor Skill]"), true)
+}
+
+///|
+test "llm response parser extracts content" {
+  let json = "{\"choices\":[{\"message\":{\"content\":\"Hello world\"}}]}"
+  let result = parse_llm_response(json)
+  assert_eq(result, "Hello world")
+}
+
+///|
+test "llm response parser handles empty" {
+  let result = parse_llm_response("")
+  assert_eq(result, "")
+}
+
+///|
+test "llm response parser handles invalid json" {
+  let result = parse_llm_response("not json")
+  assert_eq(result, "")
+}
+
+///|
+test "response parser detects tool call" {
+  let response = "I will read the file.\n```tool\n{\"name\":\"read_file\",\"input\":\"README.md\"}\n```"
+  match parse_response(response) {
+    CallTool(name, input) => {
+      assert_eq(name, "read_file")
+      assert_eq(input, "README.md")
+    }
+    Reply(_) => assert_eq(false, true)
+  }
+}
+
+///|
+test "response parser detects reply" {
+  let response = "Hello! How can I help you?"
+  match parse_response(response) {
+    Reply(text) => {
+      assert_eq(text, "Hello! How can I help you?")
+    }
+    CallTool(_, _) => assert_eq(false, true)
+  }
+}
+
+///|
+test "response parser handles empty" {
+  match parse_response("") {
+    Reply(text) => assert_eq(text, "")
+    CallTool(_, _) => assert_eq(false, true)
+  }
 }

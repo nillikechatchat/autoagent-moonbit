@@ -68,7 +68,7 @@ pub fn parse_response(response : String) -> ResponseAction {
 }
 
 ///|
-pub enum ResponseAction {
+pub(all) enum ResponseAction {
   Reply(String)
   CallTool(String, String)
 }

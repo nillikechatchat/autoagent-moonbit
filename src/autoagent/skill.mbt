@@ -213,6 +213,12 @@ fn execute_builtin_skill_tool(skill_name : String, tool_name : String, input : S
     "docs-explain" => Success(docs_explain(input))
     "test-create" => Success(test_create(input))
     "test-coverage" => Success(test_coverage(input))
+    "codegen-implement" => Success(codegen_implement(input))
+    "codegen-scaffold" => Success(codegen_scaffold(input))
+    "debug-diagnose" => Success(debug_diagnose(input))
+    "debug-fix" => Success(debug_fix(input))
+    "refactor-extract" => Success(refactor_extract(input))
+    "refactor-simplify" => Success(refactor_simplify(input))
     _ => Failure("Skill tool not implemented: " + tool_name + " (skill: " + skill_name + ")")
   }
 }
@@ -259,6 +265,48 @@ fn test_create(component : String) -> String {
 ///|
 fn test_coverage(scope : String) -> String {
   "Coverage gaps in '\{scope}':\n\n- Error handling paths often untested.\n- Edge cases in parsing and conversion.\n- Race conditions in concurrent code.\n\nRecommended:\n1. One test per error return.\n2. One test per boundary value.\n3. One test per config combo.\n\nTarget: 80% line, 100% public API error paths."
+}
+
+// ============================================================
+// Code Generation skill tools
+// ============================================================
+
+///|
+fn codegen_implement(spec : String) -> String {
+  "Implementation plan for '\{spec}':\n\n1. Define types (struct/enum) for data model.\n2. Write function signatures with clear inputs/outputs.\n3. Implement core logic with error handling.\n4. Add input validation at boundaries.\n5. Write unit tests (happy path, error, edge).\n\nTDD order:\n- Write failing test for happy path.\n- Implement minimal code to pass.\n- Add error path tests.\n- Refactor if needed.\n\nShall I generate the code?"
+}
+
+///|
+fn codegen_scaffold(project : String) -> String {
+  "Scaffolding for '\{project}':\n\nDirectory structure:\n  src/\n    main.mbt       # Entry point\n    moon.pkg         # Package config\n  test/\n    main_test.mbt    # Tests\n  README.md\n  moon.mod\n\nBoilerplate:\n1. moon.mod with name, version, deps.\n2. moon.pkg with imports.\n3. main.mbt with entry point.\n4. Basic test file.\n\nShall I create these files?"
+}
+
+// ============================================================
+// Debugging skill tools (5-step methodology)
+// ============================================================
+
+///|
+fn debug_diagnose(issue : String) -> String {
+  "Diagnosing '\{issue}':\n\nStep 1 - Reproduce:\n- What input triggers the issue?\n- Is it consistent or intermittent?\n- Minimal reproduction case?\n\nStep 2 - Isolate:\n- Which component is responsible?\n- What changed recently?\n- Check logs and error messages.\n\nStep 3 - Root cause:\n- Is it a logic error, type error, or runtime error?\n- Is it in input handling, core logic, or output?\n- Does it affect all inputs or specific cases?\n\nShall I help narrow down the root cause?"
+}
+
+///|
+fn debug_fix(diagnosis : String) -> String {
+  "Fix strategy for '\{diagnosis}':\n\nStep 4 - Fix:\n- Write a failing test that reproduces the bug.\n- Make the minimal change to fix it.\n- Verify the test passes.\n- Verify no regressions.\n\nStep 5 - Prevent:\n- Add regression test.\n- Add input validation if missing.\n- Document the root cause.\n- Consider if similar bugs exist elsewhere.\n\nPriority: fix the root cause, not the symptom."
+}
+
+// ============================================================
+// Refactoring skill tools (safe incremental changes)
+// ============================================================
+
+///|
+fn refactor_extract(code_desc : String) -> String {
+  "Extract refactoring for '\{code_desc}':\n\n1. Identify complex logic blocks (>10 lines).\n2. Name the block after its intent.\n3. Extract into a new function.\n4. Replace inline code with function call.\n5. Run tests to verify no behavior change.\n\nRules:\n- Each extracted function does ONE thing.\n- Function name describes WHAT, not HOW.\n- Keep inputs/outputs explicit.\n- No hidden side effects.\n\nShall I identify extraction candidates?"
+}
+
+///|
+fn refactor_simplify(code_desc : String) -> String {
+  "Simplify refactoring for '\{code_desc}':\n\nCommon patterns:\n1. Deep nesting -> early returns.\n2. Long conditionals -> pattern matching.\n3. Magic numbers -> named constants.\n4. Repeated patterns -> helper functions.\n5. Complex expressions -> intermediate variables.\n\nSafety checklist:\n- [ ] All tests pass before starting.\n- [ ] Each change is a single commit.\n- [ ] Run tests after each change.\n- [ ] No behavior change.\n\nShall I suggest specific simplifications?"
 }
 
 ///|
@@ -311,6 +359,42 @@ pub fn default_skill_registry() -> SkillRegistry {
       SkillTool::new("test-coverage", "Analyze coverage gaps and recommend additions.", "quality", Low),
     ],
     ["test", "testing", "unit test", "coverage", "QA", "quality assurance", "TDD"],
+  ))
+
+  registry.register(Skill::new(
+    "code-gen",
+    "Code generation assistant for creating implementations from specifications.",
+    "development",
+    "You are a code generation assistant. Generate clean, well-structured code from specifications. Follow TDD: write tests first, then implement. Always include error handling, input validation, and clear naming. Use the project's existing patterns and libraries.",
+    [
+      SkillTool::new("codegen-implement", "Generate implementation from a specification.", "development", Low),
+      SkillTool::new("codegen-scaffold", "Generate project scaffolding and boilerplate.", "development", Low),
+    ],
+    ["generate", "implement", "create code", "build", "scaffold", "boilerplate", "code generation"],
+  ))
+
+  registry.register(Skill::new(
+    "debug",
+    "Debugging assistant for systematic problem diagnosis and resolution.",
+    "quality",
+    "You are a debugging assistant. Follow the 5-step debugging methodology: 1) Reproduce the issue, 2) Isolate the root cause, 3) Simplify the reproduction, 4) Fix the bug, 5) Add regression prevention. Always start with the smallest possible reproduction. Never fix symptoms - find root causes.",
+    [
+      SkillTool::new("debug-diagnose", "Diagnose a bug using systematic analysis.", "quality", Low),
+      SkillTool::new("debug-fix", "Suggest a fix with regression prevention.", "quality", Low),
+    ],
+    ["debug", "bug", "error", "fix", "diagnose", "troubleshoot", "issue", "problem"],
+  ))
+
+  registry.register(Skill::new(
+    "refactor",
+    "Refactoring assistant for safe, incremental code improvements.",
+    "quality",
+    "You are a refactoring assistant. Make small, safe, incremental changes. Each change must pass all existing tests. Follow the boy scout rule: leave code cleaner than you found it. Prioritize: 1) Extract complex logic, 2) Remove duplication, 3) Improve naming, 4) Simplify control flow. Never refactor and add features at the same time.",
+    [
+      SkillTool::new("refactor-extract", "Extract complex logic into named functions.", "quality", Low),
+      SkillTool::new("refactor-simplify", "Simplify code while preserving behavior.", "quality", Low),
+    ],
+    ["refactor", "clean up", "simplify", "extract", "rename", "restructure", "improve code"],
   ))
 
   registry

@@ -4,7 +4,7 @@
 ///
 
 ///|
-pub enum ToolResult {
+pub(all) enum ToolResult {
   ToolSuccess(String)
   ToolError(String)
 }
