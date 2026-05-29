@@ -1,3 +1,12 @@
 import {
-  "moonbitlang/core/string"
+  "moonbitlang/core/string",
+  "moonbitlang/core/json",
+  "moonbitlang/core/bytes",
 }
+
+options(
+  targets: {
+    "io_native.mbt": [ "native", "llvm" ],
+    "io_stub.mbt": [ "not", "native", "llvm" ],
+  },
+)
