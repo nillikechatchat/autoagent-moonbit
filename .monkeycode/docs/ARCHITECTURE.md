@@ -2,223 +2,111 @@
 
 ## 架构目标
 
-AutoAgent 的目标是提供一个可阅读、可扩展、可交互的轻量 Agent Runtime。当前实现采用 MoonBit-first 架构：MoonBit 负责规划、状态、记忆建模、skill 选择、LLM 响应解析和工具调用决策；Shell 只负责 LLM HTTP、文件系统、命令执行和网络搜索这些 I/O 工作。
+AutoAgent 的目标是提供一个纯 MoonBit 实现的轻量 Agent CLI/runtime。MoonBit 负责所有逻辑决策，C FFI 仅负责 I/O 原语。
 
 ## 高层结构
 
 ```mermaid
 graph TD
-    User["User Input"] --> Shell["Shell I/O Layer"]
-    Shell --> Plan["MoonBit plan"]
-    Plan --> LLM["Shell calls LLM API"]
-    LLM --> Parse["MoonBit parse"]
-    Parse --> Tool["Shell executes tool"]
-    Tool --> Result["MoonBit tool_result"]
-    Result --> LLM
+    User["User Input"] --> REPL["MoonBit REPL"]
+    REPL --> Plan["MoonBit Planner"]
+    Plan --> LLM["LLM API (C FFI HTTP)"]
+    LLM --> Parse["MoonBit Response Parser"]
+    Parse --> Tool["Tool Execution (C FFI I/O)"]
+    Tool --> Memory["Memory Persistence (C FFI File)"]
+    Memory --> LLM
     Parse --> Reply["Final Reply"]
 ```
 
-## 组件职责
+## 核心原则
 
-### Agent Core
+1. **MoonBit-first**：所有 agent 逻辑在 MoonBit 中实现
+2. **C FFI 仅 I/O**：C 代码只提供 HTTP、文件、进程、环境变量原语
+3. **单一二进制**：编译为一个原生可执行文件，无外部依赖
+4. **集成测试优先**：遵循 Codex 原则，集成测试覆盖 agent 行为链路
 
-文件：`src/autoagent/agent.mbt`
+## 模块职责
 
-`Agent` 是运行时的协调者，持有 `AgentConfig`、`Planner`、`Provider`、`Memory` 和 `Array[Tool]`。`Agent::run` 是简单入口，`Agent::run_trace` 是结构化调试入口。
+### REPL (`src/autoagent/repl.mbt`)
 
-执行流程：
+- 交互式命令循环
+- Agent Loop（规划 → 调 LLM → 解析 → 执行工具 → 循环）
+- 会话持久化（`.autoagent/workspace/sessions/`）
+- 记忆持久化（`.autoagent/workspace/memory.json`）
 
-1. 写入 system prompt。
-2. 写入用户目标。
-3. 检查用户目标长度是否超过 `max_goal_length`。
-4. 调用 `Planner::plan` 生成步骤。
-5. 对每个步骤调用 `Agent::invoke_step`。
-6. 仅执行 `risk = Low` 的工具。
-7. 将每个工具结果写入 Memory。
-8. 工具失败时停止后续步骤。
-9. 生成 `RunTrace`，记录状态、停止原因、步骤和观察结果。
-10. 调用 `Provider::complete_trace` 生成最终响应。
-11. 将最终响应写入 Memory 并返回。
+### LLM Provider (`src/autoagent/llm_provider.mbt`)
 
-### Planner
+- OpenAI-compatible Chat Completions API 客户端
+- 环境变量 + 配置文件双重配置
+- JSON 请求构建和响应解析
 
-文件：`src/autoagent/planner.mbt`
+### 工具执行 (`src/autoagent/tools.mbt`)
 
-`Planner` 使用 `max_steps` 控制返回步骤数量，并根据目标关键词选择工具。新项目和构建类目标优先使用 `scaffold`，安全、测试和审查类目标优先加入 `checklist`，学习和指导类目标优先加入 `coach`。
+- 5 个 I/O 工具：read_file, write_file, list_files, run_command, search_web
+- 安全策略：路径限制、命令拒绝列表
+- URL 编码和 HTML 解析
 
-1. `scaffold`
-2. `checklist`
-3. `coach`
+### 技能系统 (`src/autoagent/skill.mbt`)
 
-对于 `build a chatbot for my website` 这类目标，Planner 会生成网站聊天机器人专属的执行理由。该模块的设计重点是隔离规划逻辑，让后续动态规划器替换时保持 `Agent` 主流程稳定。
+- 7 个内置技能，14 个专用工具
+- 目标驱动的技能选择
+- 技能工具执行和结果返回
 
-### Tool Registry
+### C I/O 层 (`native/io.c`)
 
-文件：`src/autoagent/tool.mbt`
+- HTTP：libcurl（无头文件依赖）
+- 文件：POSIX (fopen/fread/fwrite/mkdir)
+- 进程：popen
+- 环境变量：getenv/setenv
+- 工作目录：getcwd
 
-`Tool` 包含 `ToolSpec`，通过 `Tool::execute` 按工具名分发到内置实现。`find_tool` 在已注册工具数组中查找匹配工具。`ToolSpec` 当前包含工具名、描述、类别和风险等级。
+### MoonBit FFI (`src/autoagent/io_native.mbt`)
 
-当前工具：
+- `#borrow` 注解的 extern "c" 声明
+- String ↔ Bytes 转换（UTF-8 编解码）
+- 平台特定编译（native/llvm vs wasm-gc/js）
 
-- `scaffold`：生成实施脚手架。网站 chatbot 目标会包含前端 widget、`POST /api/chat`、Provider、记忆、知识源、安全和首个验收测试。
-- `checklist`：生成安全和上线检查清单。网站 chatbot 目标会包含角色、输入、允许工具、记忆策略、停止条件和 launch gate。
-- `coach`：生成交互式操作工作流。网站 chatbot 目标会包含初始化、逐轮测试、经验沉淀、偏好记忆和集成节奏。
+### Eval 系统 (`src/autoagent/eval.mbt`)
 
-### Skill System
+- 测试用例定义（输入、期望工具、期望内容）
+- 端到端评估执行
+- 评估报告生成
 
-文件：`src/autoagent/skill.mbt`
+## 数据流
 
-Skill 系统提供可扩展的能力模块。每个 Skill 包含：
-
-- `name`：skill 名称
-- `description`：描述
-- `category`：分类
-- `instructions`：系统提示扩展
-- `tools`：skill 专属工具
-- `keywords`：触发关键词
-
-核心组件：
-
-- `Skill`：单个 skill 定义。
-- `SkillTool`：skill 专属工具定义。
-- `SkillRegistry`：skill 注册表，管理加载、查找、选择和执行。
-
-内置 Skills：
-
-| Skill | 工具 | 触发关键词 |
-|-------|------|-----------|
-| research | research-search, research-summarize | research, investigate, study |
-| code-review | review-analyze, review-suggest | review, refactor, code quality |
-| docs | docs-generate, docs-explain | document, docs, explain, README |
-| testing | test-create, test-coverage | test, coverage, QA, TDD |
-
-集成方式：
-
-1. `Agent::with_skills` 将 skill 工具合并到 Agent 工具列表。
-2. Skill 指令注入到系统提示中。
-3. Planner 根据 goal 关键词选择相关 skill 工具。
-4. 工具执行时先尝试内置实现，再尝试 skill 工具。
-
-### Interactive Shell
-
-文件：`scripts/autoagent.sh`、`scripts/repl.sh`
-
-Shell 会话层负责真实初始化和 I/O，不承担 agent 决策：
-
-1. `init` 创建 `.autoagent/config.json` 和 `.autoagent/workspace/`。
-2. `chat` 创建会话日志并进入交互循环。
-3. 每轮输入调用 MoonBit 原生二进制的 `--json` protocol。
-4. MoonBit 输出 `think`、`tool`、`reply` 或 `error` action。
-5. Shell 根据 action 调用 LLM、执行工具或展示回复。
-6. 每轮输出写入 `.autoagent/workspace/sessions/` 和 `.autoagent/workspace/memory.json`。
-
-### MoonBit Agent Loop
-
-文件：`src/autoagent/agent_loop.mbt`、`src/main/main.mbt`
-
-`agent_loop.mbt` 提供 Shell 与 MoonBit 之间的 JSON action 协议：
-
-- `AgentAction::Think(reason)`：要求 Shell 调用 LLM。
-- `AgentAction::CallTool(name, input)`：要求 Shell 执行 allowlisted I/O 工具。
-- `AgentAction::Reply(text)`：要求 Shell 展示最终回复。
-- `AgentAction::Error(message)`：要求 Shell 展示错误。
-
-`src/main/main.mbt` 的 `--json` 入口支持：
-
-- `{"cmd":"plan","goal":"..."}`
-- `{"cmd":"parse","response":"..."}`
-- `{"cmd":"tool_result","tool":"...","result":"..."}`
-
-### Memory
-
-文件：`src/autoagent/memory.mbt`、`src/autoagent/memory_layer.mbt`
-
-Memory 系统采用分层架构，参考 Hermes 记忆系统 2.0 设计：
-
-| 层 | 用途 | 注入时机 |
-|---|------|----------|
-| Skeleton | 系统运行必须长期知道的稳定事实 | 默认注入 |
-| User | 用户长期偏好和协作方式 | 默认注入 |
-| Experiences | 实战验证过的坑、经验、模式 | 按需检索 |
-| Sidecar | 当前会话活跃状态 | 会话内 |
-| Archive | 不适合常驻注入但需保留的材料 | 仅追溯时 |
-
-核心组件：
-
-- `Memory`：单层存储，支持容量限制和消息截断。
-- `LayeredMemory`：五层存储容器。
-- `MemoryRouter`：写入分流、读取路由、上下文恢复。
-
-写入分流规则：
-
-- `System` 角色消息 → Skeleton 层
-- `Tool`/`Assistant` 角色消息 → Sidecar 层
-- `User` 角色消息根据前缀和长度分类到不同层
-
-读取策略：
-
-- `default_context()`：返回 Skeleton + User 层摘要（默认注入）
-- `full_context()`：返回所有层摘要
-- `recall(query)`：按关键词跨层检索
-- `restore_context()`：按恢复顺序逐层输出
-
-### Provider
-
-文件：`src/autoagent/provider.mbt`
-
-`Provider` 当前是确定性响应生成器。`Provider::complete_trace` 将目标、状态、停止原因和工具观察结果拼成最终文本。
-
-### Shared Types
-
-文件：`src/autoagent/types.mbt`
-
-共享类型包括：
-
-- `Role`
-- `Message`
-- `Step`
-- `StepResult`
-- `ToolSpec`
-- `ToolCall`
-- `RiskLevel`
-- `RunState`
-- `StopReason`
-- `RunTrace`
-
-## 包结构
-
-```txt
-.
-├── moon.mod
-└── src
-    ├── autoagent
-    │   ├── agent.mbt
-    │   ├── agent_test.mbt
-    │   ├── memory.mbt
-    │   ├── moon.pkg
-    │   ├── planner.mbt
-    │   ├── provider.mbt
-    │   ├── tool.mbt
-    │   └── types.mbt
-    └── main
-        ├── main.mbt
-        └── moon.pkg
+```
+用户输入
+  ↓
+MoonBit REPL
+  ↓
+MoonBit Planner → 步骤列表
+  ↓
+LLM API (C FFI HTTP) → 响应
+  ↓
+MoonBit Response Parser
+  ├─→ Reply → 显示给用户
+  └─→ CallTool → 工具执行 (C FFI I/O) → 结果 → 循环
+  ↓
+记忆持久化 (C FFI File)
 ```
 
-## 关键约束
+## 安全模型
 
-- 工具执行必须通过注册表解析，保持 allowlist 边界。
-- 工具执行必须通过风险等级检查，默认只执行低风险工具。
-- 用户目标长度受 `max_goal_length` 限制，避免无界输入进入运行时。
-- 工具失败后停止后续步骤，保持 fail-fast 语义。
-- Provider 生成最终回答时使用 Memory 摘要和工具结果，保持可解释输出。
-- Planner 使用 `max_steps` 截断步骤数量，避免无界执行。
-- Agent 使用 `RunTrace` 暴露执行状态和停止原因，便于调试和审计。
-- 当前示例只执行本地确定性文本逻辑，便于测试和教学。
+- 工具执行通过风险等级检查（默认只执行 Low）
+- 文件路径限制在项目目录内
+- 命令执行拒绝危险操作（rm, sudo, git clean 等）
+- FFI 参数使用 `#borrow` 注解防止内存问题
 
-## 可扩展点
+## 构建流程
 
-- 将 `Provider` 替换为 LLM API adapter。
-- 将 `Planner` 替换为基于模型或规则的动态规划器。
-- 将 `Memory` 替换为持久化存储或检索记忆。
-- 将 `Tool::execute` 扩展为带 schema 的工具调用协议。
+```
+moon build --target native --release
+  ↓
+生成 main.c (MoonBit → C 编译)
+  ↓
+gcc -c native/io.c → io.o (C I/O 层编译)
+  ↓
+gcc -o main.exe main.c runtime.o io.o -lcurl (链接)
+  ↓
+单一原生二进制
+```

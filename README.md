@@ -1,161 +1,127 @@
 # AutoAgent
 
-AutoAgent 是一个 MoonBit-first 的轻量 Agent CLI/runtime。MoonBit 负责规划、状态、记忆建模、skill 选择、LLM 响应解析和工具调用决策；Shell 只负责 LLM HTTP、文件系统、命令执行和网络搜索这些 I/O 工作。
+AutoAgent 是一个纯 MoonBit 实现的轻量 Agent CLI/runtime。MoonBit 负责所有逻辑（规划、对话、工具选择、JSON 解析、记忆管理、REPL）；C FFI 仅负责 I/O 原语（HTTP、文件、进程、环境变量）。
 
-## 当前状态
+## 架构
 
-- MoonBit core 已可独立构建、测试和通过 JSON protocol 驱动。
-- 交互式 CLI 可通过 `scripts/autoagent.sh` 运行，支持真实 LLM、工具执行和会话记忆。
-- 无 API key 时自动回退到 MoonBit deterministic provider，测试默认不依赖网络。
-- 默认安全策略拒绝高风险命令和项目目录外路径。
-
-## Architecture
-
-```mermaid
-graph TD
-    User["User Input"] --> Shell["Shell I/O Layer"]
-    Shell --> Plan["MoonBit plan"]
-    Plan --> LLM["Shell calls LLM API"]
-    LLM --> Parse["MoonBit parse"]
-    Parse --> Tool["Shell executes tool"]
-    Tool --> Result["MoonBit tool_result"]
-    Result --> LLM
-    Parse --> Reply["Final Reply"]
+```
+用户输入 → MoonBit REPL → MoonBit 规划 → MoonBit 调 LLM API (C FFI HTTP)
+         → MoonBit 解析响应 → MoonBit 执行工具 (C FFI 文件/进程)
+         → MoonBit 记忆持久化 (C FFI 文件) → 循环直到完成
 ```
 
-## Quick Start
+**单一二进制，无外部依赖：** `_build/native/release/build/src/main/main.exe`
+
+## 快速开始
 
 ```bash
-# Type check
-PATH="$HOME/.moon/bin:$PATH" moon check
+# 类型检查
+make check
 
-# Run tests
-PATH="$HOME/.moon/bin:$PATH" moon test
+# 运行测试 (89 tests)
+make test
 
-# Build native runtime
-PATH="$HOME/.moon/bin:$PATH" moon build --target native --release
+# 构建原生二进制 (含 C I/O 层)
+make build-native
 
-# Initialize workspace
-./scripts/autoagent.sh init
+# 初始化工作区
+make init
 
-# Run one task
-./scripts/autoagent.sh run "build a chatbot"
+# 启动交互式 REPL
+make chat
 
-# Start interactive chat
-./scripts/autoagent.sh chat
+# 单次运行
+./_build/native/release/build/src/main/main.exe run "build a chatbot"
 ```
 
 ## LLM 配置
 
-AutoAgent 使用 OpenAI-compatible Chat Completions API。
-
 ```bash
-export MCAI_LLM_API_KEY="..."
+export MCAI_LLM_API_KEY="your-key"
 export MCAI_LLM_BASE_URL="https://proxy.monkeycode-ai.com/v1"
 export MCAI_LLM_MODEL="monkeycode-basic/qwen3.5-plus"
 ```
 
-也可以编辑 `.autoagent/config.json`。环境变量优先级更高。
+或编辑 `.autoagent/config.json`。无 API key 时使用 deterministic fallback。
 
-## MoonBit JSON Protocol
+## 技能系统 (7 Skills, 14 Tools)
 
-构建后的二进制路径：`_build/native/release/build/src/main/main.exe`。
-
-```bash
-./_build/native/release/build/src/main/main.exe --json '{"cmd":"plan","goal":"build a chatbot"}'
-./_build/native/release/build/src/main/main.exe --json '{"cmd":"parse","response":"Hello"}'
-./_build/native/release/build/src/main/main.exe --json '{"cmd":"tool_result","tool":"read_file","result":"content"}'
-```
-
-输出 action：
-
-- `think`：Shell 应调用 LLM。
-- `tool`：Shell 应执行指定工具。
-- `reply`：Shell 应展示最终回复。
-- `error`：Shell 应展示错误。
-
-## Tools
-
-交互脚本提供这些 I/O 工具：
-
-- `read_file`：读取项目内文件。
-- `write_file`：写入项目内文件，输入为 `{"path":"...","content":"..."}`。
-- `list_files`：列出项目内目录。
-- `run_command`：执行本地开发命令，带安全拒绝列表。
-- `search_web`：使用 DuckDuckGo HTML 搜索。
-
-MoonBit 通过 fenced tool block 解析工具调用：
-
-````text
-```tool
-{"name":"read_file","input":"README.md"}
-```
-````
-
-## Skills
-
-内置 4 个 skill，提供 8 个专用工具：
-
-| Skill | 工具 | 用途 |
-|-------|------|------|
+| 技能 | 工具 | 用途 |
+|------|------|------|
 | research | research-search, research-summarize | 信息搜索与综合 |
 | code-review | review-analyze, review-suggest | 代码质量分析 |
 | docs | docs-generate, docs-explain | 文档生成与解释 |
 | testing | test-create, test-coverage | 测试计划与覆盖率 |
+| code-gen | codegen-implement, codegen-scaffold | TDD 代码生成 |
+| debug | debug-diagnose, debug-fix | 5 步调试法 |
+| refactor | refactor-extract, refactor-simplify | 安全重构 |
 
-```bash
-./_build/native/release/build/src/main/main.exe --skills
-./_build/native/release/build/src/main/main.exe --skill research
+## 工具
+
+| 工具 | 说明 |
+|------|------|
+| read_file | 读取项目内文件 |
+| write_file | 写入项目内文件 (JSON input) |
+| list_files | 列出项目内目录 |
+| run_command | 执行本地命令 (带安全拒绝列表) |
+| search_web | DuckDuckGo 搜索 |
+
+## 项目结构
+
 ```
-
-## Project Layout
-
-```txt
 .
-├── Makefile
-├── README.md
-├── scripts/
-│   └── autoagent.sh
+├── Makefile                    # 构建系统 (含 C 编译链接)
+├── native/
+│   └── io.c                    # C I/O 层 (HTTP/文件/进程/环境变量)
 ├── src/
 │   ├── autoagent/
-│   │   ├── agent.mbt
-│   │   ├── agent_loop.mbt
-│   │   ├── agent_protocol.mbt
-│   │   ├── memory.mbt
-│   │   ├── planner.mbt
-│   │   ├── provider.mbt
-│   │   ├── skill.mbt
-│   │   ├── tool.mbt
-│   │   └── types.mbt
+│   │   ├── io_native.mbt       # MoonBit FFI 声明 (#borrow 注解)
+│   │   ├── io_stub.mbt         # wasm-gc/js 的 no-op stub
+│   │   ├── llm_provider.mbt    # LLM API 客户端
+│   │   ├── tools.mbt           # 工具执行 + 安全策略
+│   │   ├── repl.mbt            # REPL + Agent Loop + 记忆持久化
+│   │   ├── skill.mbt           # 7 技能 / 14 工具
+│   │   ├── eval.mbt            # 质量评估系统
+│   │   ├── agent.mbt           # Agent 核心
+│   │   ├── planner.mbt         # 规划器
+│   │   ├── memory.mbt          # 记忆管理
+│   │   └── terminal.mbt        # ANSI 终端格式化
 │   └── main/
-│       └── main.mbt
-└── .monkeycode/docs/
+│       └── main.mbt            # CLI 入口
+└── .monkeycode/docs/           # 项目文档
 ```
 
-## Quality Gate
+## 质量门
 
 ```bash
-PATH="$HOME/.moon/bin:$PATH" moon check
-PATH="$HOME/.moon/bin:$PATH" moon test
-PATH="$HOME/.moon/bin:$PATH" moon build --target native --release
-make all
+make all    # check + test + build-native
 ```
 
-当前测试覆盖核心 agent、planner、memory、skills、CLI args 和 MoonBit JSON protocol。
+当前状态：
+- `moon check`：0 errors
+- `moon test`：89 passed, 0 failed
+- `make build-native`：成功生成原生二进制
 
-## Documentation
+## 测试策略
 
-- `.monkeycode/docs/ARCHITECTURE.md`：架构和组件职责。
-- `.monkeycode/docs/INTERFACES.md`：公开类型、函数和 JSON protocol。
-- `.monkeycode/docs/USAGE.md`：使用手册。
-- `.monkeycode/docs/DEVELOPER_GUIDE.md`：开发指南。
-- `.monkeycode/docs/ROADMAP.md`：演进计划。
+遵循 Codex 原则：**集成测试优先于单元测试**。
 
-## Security Baseline
+- 单元测试：验证单个函数的正确性
+- 集成测试：验证技能注册表、工具链、LLM 解析、响应动作检测
+- Eval 系统：验证 agent 行为的端到端正确性
 
-- MoonBit core 默认只执行 `RiskLevel.Low` 工具。
-- Shell I/O 层限制文件路径在项目目录内。
-- `run_command` 拒绝删除、提权、系统管理和高风险命令。
-- 默认测试和 deterministic provider 不依赖真实网络或 LLM。
+## 安全基线
 
-AutoAgent 的关键边界是 MoonBit 做决策，Shell 做 I/O。
+- MoonBit core 默认只执行 `RiskLevel.Low` 工具
+- Shell I/O 层限制文件路径在项目目录内
+- `run_command` 拒绝删除、提权、系统管理和高风险命令
+- 默认测试和 deterministic provider 不依赖真实网络或 LLM
+
+## 参考
+
+- Claude Code：REPL 交互模式、工具执行显示
+- Hermes：自进化记忆、分层记忆架构
+- Pi：极简工具集、扩展系统
+- Google agents-cli：7 技能包模式
+- Codex：集成测试优先、Snapshot 测试
+- Superpowers：TDD 强制流程
