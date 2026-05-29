@@ -146,6 +146,16 @@ pub fn LLMConfig::chat(self : LLMConfig, messages : Array[LLMMessage]) -> String
 }
 
 ///|
+/// Call LLM API with streaming. Prints chunks to stdout in real-time.
+///
+pub fn LLMConfig::chat_stream(self : LLMConfig, messages : Array[LLMMessage]) -> String {
+  if !self.is_configured() { return "" }
+  let url = self.base_url + "/chat/completions"
+  let body = build_chat_request(self.model, messages)
+  http_post_stream(url, body, auth_token=self.api_key)
+}
+
+///|
 /// Call LLM API and return parsed content.
 ///
 pub fn LLMConfig::chat_content(self : LLMConfig, messages : Array[LLMMessage]) -> String {

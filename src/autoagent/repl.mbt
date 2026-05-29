@@ -93,20 +93,37 @@ pub fn ReplState::run_turn(self : ReplState, user_input : String) -> String {
     all_messages.push(m)
   }
 
+  // Context window management: truncate if too many messages
+  let max_context = 20
+  if all_messages.length() > max_context {
+    let system = all_messages[0]
+    let recent = all_messages[all_messages.length() - max_context + 1:]
+    all_messages.clear()
+    all_messages.push(system)
+    for m in recent {
+      all_messages.push(m)
+    }
+  }
+
   let mut final_reply = ""
 
   for _round in 0..<self.max_rounds {
     // Show thinking indicator
     print_thinking()
 
-    // Call LLM
-    let response = self.config.chat_content(all_messages)
+    // Call LLM with streaming
+    let start_time = time_ms()
+    let response = self.config.chat_stream(all_messages)
+    let elapsed = time_ms() - start_time
 
     if response == "" {
       // Fallback to deterministic response
       final_reply = fallback_response(user_input)
       break
     }
+
+    // Show timing
+    print_timing(elapsed)
 
     // Parse response
     match parse_response(response) {
@@ -115,14 +132,17 @@ pub fn ReplState::run_turn(self : ReplState, user_input : String) -> String {
         break
       }
       CallTool(name, input) => {
-        // Show tool execution
+        // Show tool execution with timing
         print_tool_start(name, input)
+        let tool_start = time_ms()
 
         // Execute tool
         let result = execute_tool(name, input, project_root=self.project_root)
+        let tool_elapsed = time_ms() - tool_start
+
         let result_str = match result {
           ToolSuccess(content) => {
-            print_tool_done(name)
+            print_tool_done(name, tool_elapsed)
             content
           }
           ToolError(msg) => {
@@ -206,6 +226,18 @@ pub fn run_repl(config : LLMConfig, session_dir : String, memory_file : String) 
         println("Messages: " + state.messages.length().to_string())
         println("Max rounds: " + state.max_rounds.to_string())
         println("Project root: " + state.project_root)
+      }
+      "/resume" => {
+        let existing = load_memory(state.memory_file)
+        if existing.length() > 0 {
+          state.messages.clear()
+          for m in existing {
+            state.messages.push(m)
+          }
+          print_info("Resumed " + existing.length().to_string() + " messages from memory.")
+        } else {
+          print_info("No previous session found.")
+        }
       }
       "/help" => {
         print_help()
@@ -314,7 +346,7 @@ fn print_banner(config : LLMConfig) -> Unit {
   } else {
     println(dim_text("  Mode: deterministic (no API key)"))
   }
-  println(dim_text("  Commands: /help /clear /history /skills /config /status /quit"))
+  println(dim_text("  Commands: /help /clear /history /resume /skills /config /status /quit"))
   println("")
 }
 
@@ -334,8 +366,17 @@ fn print_tool_start(name : String, input : String) -> Unit {
 }
 
 ///|
-fn print_tool_done(name : String) -> Unit {
-  println(ansi_green() + "  done" + ansi_reset() + " " + dim_text(name))
+fn print_tool_done(name : String, elapsed_ms : Int64) -> Unit {
+  let sec = elapsed_ms / 1000L
+  let ms = elapsed_ms % 1000L
+  println(ansi_green() + "  done" + ansi_reset() + " " + dim_text(name + " (" + sec.to_string() + "." + ms.to_string() + "s)"))
+}
+
+///|
+fn print_timing(elapsed_ms : Int64) -> Unit {
+  let sec = elapsed_ms / 1000L
+  let ms = elapsed_ms % 1000L
+  println(dim_text("  (" + sec.to_string() + "." + ms.to_string() + "s)"))
 }
 
 ///|
@@ -365,6 +406,7 @@ fn print_help() -> Unit {
   println("    /skills    List available tools and skills")
   println("    /config    Show current configuration")
   println("    /status    Show session status")
+  println("    /resume    Resume previous session from memory")
   println("    /quit      Exit")
   println("")
   println(ansi_bold() + "  Tools:" + ansi_reset())

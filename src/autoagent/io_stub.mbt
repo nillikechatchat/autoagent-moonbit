@@ -11,6 +11,17 @@ pub fn http_post(_url : String, _body : String, auth_token~ : String = "") -> St
 }
 
 ///|
+pub fn http_post_stream(_url : String, _body : String, auth_token~ : String = "") -> String {
+  ignore(auth_token)
+  ""
+}
+
+///|
+pub fn time_ms() -> Int64 {
+  0L
+}
+
+///|
 pub fn read_file(_path : String) -> String {
   ""
 }

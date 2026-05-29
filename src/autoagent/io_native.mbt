@@ -49,8 +49,18 @@ extern "c" fn autoagent_file_exists(path : Bytes, path_len : Int) -> Int = "auto
 extern "c" fn autoagent_exec(cmd : Bytes, cmd_len : Int) -> Bytes = "autoagent_exec"
 
 ///|
-#borrow(key)
-extern "c" fn autoagent_getenv(key : Bytes, key_len : Int) -> Bytes = "autoagent_getenv"
+#borrow(url, body, auth)
+extern "c" fn autoagent_http_post_stream(
+  url : Bytes,
+  url_len : Int,
+  body : Bytes,
+  body_len : Int,
+  auth : Bytes,
+  auth_len : Int
+) -> Bytes = "autoagent_http_post_stream"
+
+///|
+extern "c" fn autoagent_time_ms() -> Int64 = "autoagent_time_ms"
 
 ///|
 #borrow(key, val)
@@ -236,6 +246,34 @@ pub fn set_env(key : String, value : String) -> Bool {
   let key_b = str_to_c_bytes(key)
   let val_b = str_to_c_bytes(value)
   autoagent_setenv(key_b, key.length(), val_b, value.length()) == 0
+}
+
+///|
+/// HTTP POST with streaming. Prints chunks to stdout in real-time.
+///
+pub fn http_post_stream(url : String, body : String, auth_token~ : String = "") -> String {
+  let url_b = str_to_c_bytes(url)
+  let body_b = str_to_c_bytes(body)
+  let auth_b = str_to_c_bytes(auth_token)
+  let resp = autoagent_http_post_stream(
+    url_b,
+    url.length(),
+    body_b,
+    body.length(),
+    auth_b,
+    auth_token.length(),
+  )
+  if resp.length() == 0 { return "" }
+  let s = c_bytes_to_str(resp)
+  autoagent_free(resp)
+  s
+}
+
+///|
+/// Get current time in milliseconds (monotonic clock).
+///
+pub fn time_ms() -> Int64 {
+  autoagent_time_ms()
 }
 
 ///|

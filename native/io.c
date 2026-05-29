@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <time.h>
 
 /* ============================================================
  * libcurl forward declarations (no headers required)
@@ -108,6 +109,74 @@ char *autoagent_http_post(const char *url, int url_len,
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+
+    CURLcode res = curl_easy_perform(curl);
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    free(url_s);
+    free(body_s);
+
+    if (res != CURLE_OK) {
+        if (buf.data) free(buf.data);
+        return NULL;
+    }
+    return buf.data;
+}
+
+/*
+ * Streaming HTTP POST: prints response chunks to stdout in real-time.
+ * Returns the complete response as a string. Caller must free.
+ * Each chunk is printed to stdout immediately for streaming UX.
+ */
+static size_t curl_stream_write_cb(void *ptr, size_t size, size_t nmemb, void *ud) {
+    struct curl_write_buf *buf = (struct curl_write_buf *)ud;
+    int total = (int)(size * nmemb);
+
+    /* Print chunk to stdout immediately for streaming */
+    fwrite(ptr, 1, total, stdout);
+    fflush(stdout);
+
+    /* Also accumulate for return value */
+    if (buf->size + total + 1 > buf->cap) {
+        buf->cap = (buf->size + total + 1) * 2;
+        buf->data = (char *)realloc(buf->data, buf->cap);
+    }
+    memcpy(buf->data + buf->size, ptr, total);
+    buf->size += total;
+    buf->data[buf->size] = '\0';
+    return total;
+}
+
+char *autoagent_http_post_stream(const char *url, int url_len,
+                                 const char *body, int body_len,
+                                 const char *auth, int auth_len) {
+    CURL *curl = curl_easy_init();
+    if (!curl) return NULL;
+
+    char *url_s = mbt_strndup(url, url_len);
+    char *body_s = mbt_strndup(body, body_len);
+
+    struct curl_write_buf buf = {NULL, 0, 0};
+    void *headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    if (auth && auth_len > 0) {
+        char hdr[512];
+        int n = auth_len < 480 ? auth_len : 480;
+        memcpy(hdr, "Authorization: Bearer ", 22);
+        memcpy(hdr + 22, auth, n);
+        hdr[22 + n] = '\0';
+        headers = curl_slist_append(headers, hdr);
+    }
+
+    curl_easy_setopt(curl, CURLOPT_URL, url_s);
+    curl_easy_setopt(curl, CURLOPT_POST, 1L);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body_s);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)body_len);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_stream_write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
 
     CURLcode res = curl_easy_perform(curl);
     curl_slist_free_all(headers);
@@ -312,4 +381,14 @@ char *autoagent_getcwd_alloc(void) {
  */
 void autoagent_free(void *ptr) {
     if (ptr) free(ptr);
+}
+
+/*
+ * autoagent_time_ms() -> current time in milliseconds
+ * Used for tool execution timing.
+ */
+long long autoagent_time_ms(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
