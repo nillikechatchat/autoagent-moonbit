@@ -83,12 +83,7 @@ pub(all) enum ResponseAction {
 ///
 pub fn parse_response_safe(response : String) -> ResponseAction {
   if response == "" { return Reply("") }
-  try {
-    parse_response(response)
-  } catch {
-    // If parsing fails, treat as plain reply
-    _ => Reply(response)
-  }
+  parse_response(response)
 }
 
 ///|
@@ -229,15 +224,14 @@ pub fn run_repl(config : LLMConfig, session_dir : String, memory_file : String) 
       "/export" => {
         let ts = exec_command("date +%Y%m%d-%H%M%S")
         let export_path = ".autoagent/workspace/export-" + ts.trim().to_owned() + ".md"
-        let now = exec_command("date")
-        let content = "# AutoAgent Session Export\n\n"
-        let content = content + "Date: " + now.trim().to_owned() + "\n\n"
-        let content = content + "## Conversation\n\n"
+        let mut export_content = "# AutoAgent Session Export\n\n"
+        export_content = export_content + "Date: " + exec_command("date").trim().to_owned() + "\n\n"
+        export_content = export_content + "## Conversation\n\n"
         for m in state.messages {
           let role = if m.role == "user" { "**User**" } else { "**Assistant**" }
-          let content = content + "### " + role + "\n\n" + m.content + "\n\n"
+          export_content = export_content + "### " + role + "\n\n" + m.content + "\n\n"
         }
-        ignore(write_file(export_path, content))
+        ignore(write_file(export_path, export_content))
         print_info("Exported to " + export_path)
       }
       "/config" => {
