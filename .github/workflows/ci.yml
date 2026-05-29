@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install MoonBit
+        run: curl -fsSL https://cli.moonbitlang.cn/install/unix.sh | bash
+      
+      - name: Add MoonBit to PATH
+        run: echo "$HOME/.moon/bin" >> $GITHUB_PATH
+      
+      - name: Type check
+        run: moon check
+      
+      - name: Run tests
+        run: moon test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install MoonBit
+        run: curl -fsSL https://cli.moonbitlang.cn/install/unix.sh | bash
+      
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+      
+      - name: Add MoonBit to PATH
+        run: echo "$HOME/.moon/bin" >> $GITHUB_PATH
+      
+      - name: Build native binary
+        run: make build-native
+      
+      - name: Verify binary
+        run: |
+          ./_build/native/release/build/src/main/main.exe --version
+          ./_build/native/release/build/src/main/main.exe --config
+      
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoagent-linux-x86_64
+          path: _build/native/release/build/src/main/main.exe
