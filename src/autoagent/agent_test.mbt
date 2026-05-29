@@ -676,3 +676,44 @@ test "cli parses --skill= flag" {
   let args = parse_args(["--skill=research"])
   assert_eq(args.show_skill, "research")
 }
+
+// ============================================================
+// MoonBit JSON protocol tests
+// ============================================================
+
+///|
+test "agent action serializes escaped reply json" {
+  let action = AgentAction::Reply("line 1\n\"quoted\"")
+  let json = action.to_json()
+  assert_eq(json, "{\"action\":\"reply\",\"text\":\"line 1\\n\\\"quoted\\\"\"}")
+}
+
+///|
+test "json field handles escaped strings" {
+  let json = "{\"cmd\":\"parse\",\"response\":\"before\\n{\\\"name\\\":\\\"read_file\\\"}\"}"
+  assert_eq(json_field(json, "cmd"), "parse")
+  assert_eq(json_field(json, "response"), "before\n{\"name\":\"read_file\"}")
+}
+
+///|
+test "conversation extracts fenced tool call" {
+  let conversation = Conversation::new()
+  conversation.add("assistant", "I need a file.\n```tool\n{\"name\":\"read_file\",\"input\":\"README.md\"}\n```")
+  match conversation.extract_tool_call() {
+    Some((name, input)) => {
+      assert_eq(name, "read_file")
+      assert_eq(input, "README.md")
+    }
+    None => assert_eq(false, true)
+  }
+}
+
+///|
+test "conversation removes fenced tool block from reply" {
+  let conversation = Conversation::new()
+  conversation.add("assistant", "Before\n```tool\n{\"name\":\"list_files\",\"input\":\".\"}\n```\nAfter")
+  let cleaned = conversation.remove_tool_block()
+  assert_eq(cleaned.contains("```tool"), false)
+  assert_eq(cleaned.contains("Before"), true)
+  assert_eq(cleaned.contains("After"), true)
+}

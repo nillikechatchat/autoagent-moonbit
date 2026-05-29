@@ -2,22 +2,20 @@
 
 ## 架构目标
 
-AutoAgent 的目标是提供一个可阅读、可扩展、可交互的轻量 Agent Runtime。当前实现包含 Agent Core、Planner、Tool、Memory、Provider、CLI 入口和 Shell 会话层。
+AutoAgent 的目标是提供一个可阅读、可扩展、可交互的轻量 Agent Runtime。当前实现采用 MoonBit-first 架构：MoonBit 负责规划、状态、记忆建模、skill 选择、LLM 响应解析和工具调用决策；Shell 只负责 LLM HTTP、文件系统、命令执行和网络搜索这些 I/O 工作。
 
 ## 高层结构
 
 ```mermaid
 graph TD
-    Goal["User Goal"] --> Agent["Agent Core"]
-    Agent --> MemoryStart["Store system and user messages"]
-    MemoryStart --> Planner["Planner"]
-    Planner --> Steps["Step List"]
-    Steps --> Registry["Tool Registry"]
-    Registry --> ToolResult["StepResult"]
-    ToolResult --> MemoryTool["Store tool message"]
-    MemoryTool --> Provider["Provider"]
-    Provider --> Answer["Final Answer"]
-    Answer --> MemoryAssistant["Store assistant message"]
+    User["User Input"] --> Shell["Shell I/O Layer"]
+    Shell --> Plan["MoonBit plan"]
+    Plan --> LLM["Shell calls LLM API"]
+    LLM --> Parse["MoonBit parse"]
+    Parse --> Tool["Shell executes tool"]
+    Tool --> Result["MoonBit tool_result"]
+    Result --> LLM
+    Parse --> Reply["Final Reply"]
 ```
 
 ## 组件职责
@@ -105,13 +103,31 @@ Skill 系统提供可扩展的能力模块。每个 Skill 包含：
 
 文件：`scripts/autoagent.sh`、`scripts/repl.sh`
 
-Shell 会话层负责真实初始化和交互：
+Shell 会话层负责真实初始化和 I/O，不承担 agent 决策：
 
 1. `init` 创建 `.autoagent/config.json` 和 `.autoagent/workspace/`。
 2. `chat` 创建会话日志并进入交互循环。
-3. 每轮输入调用 MoonBit 原生二进制执行一次 Agent run。
-4. 每轮输出写入 `.autoagent/workspace/sessions/`。
-5. `/save TEXT` 将经验追加到 `.autoagent/workspace/memory/experiences.md`。
+3. 每轮输入调用 MoonBit 原生二进制的 `--json` protocol。
+4. MoonBit 输出 `think`、`tool`、`reply` 或 `error` action。
+5. Shell 根据 action 调用 LLM、执行工具或展示回复。
+6. 每轮输出写入 `.autoagent/workspace/sessions/` 和 `.autoagent/workspace/memory.json`。
+
+### MoonBit Agent Loop
+
+文件：`src/autoagent/agent_loop.mbt`、`src/main/main.mbt`
+
+`agent_loop.mbt` 提供 Shell 与 MoonBit 之间的 JSON action 协议：
+
+- `AgentAction::Think(reason)`：要求 Shell 调用 LLM。
+- `AgentAction::CallTool(name, input)`：要求 Shell 执行 allowlisted I/O 工具。
+- `AgentAction::Reply(text)`：要求 Shell 展示最终回复。
+- `AgentAction::Error(message)`：要求 Shell 展示错误。
+
+`src/main/main.mbt` 的 `--json` 入口支持：
+
+- `{"cmd":"plan","goal":"..."}`
+- `{"cmd":"parse","response":"..."}`
+- `{"cmd":"tool_result","tool":"...","result":"..."}`
 
 ### Memory
 

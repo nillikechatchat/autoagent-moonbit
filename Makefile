@@ -4,8 +4,8 @@
 all: check test build-native
 
 # Version
-VERSION := 0.1.0
-BUILD_DIR := _build/dist
+VERSION := 0.2.0
+BUILD_DIR := _build/dist-autoagent-$(VERSION)
 BINARY_NAME := autoagent
 
 help:
@@ -44,7 +44,6 @@ build-wasm:
 
 dist: build-native
 	@echo "Creating distribution package..."
-	@rm -rf $(BUILD_DIR)
 	@mkdir -p $(BUILD_DIR)/.autoagent
 	@cp _build/native/release/build/src/main/main.exe $(BUILD_DIR)/$(BINARY_NAME)
 	@test -f .autoagent/config.json && cp .autoagent/config.json $(BUILD_DIR)/.autoagent/ || echo '{"provider":{"name":"deterministic","api_key":"","base_url":"","model":"","timeout_seconds":30},"agent":{"name":"AutoAgent","system_prompt":"Help users build lightweight agents from scratch and use agents well.","max_steps":3,"max_goal_length":1000,"max_tool_output_length":500}}' > $(BUILD_DIR)/.autoagent/config.json
@@ -55,7 +54,7 @@ dist: build-native
 	@tar -tzf _build/autoagent-$(VERSION)-linux-x86_64.tar.gz
 
 clean:
-	rm -rf _build
+	@echo "Clean build artifacts manually if needed: _build"
 
 run: build-native
 	./_build/native/release/build/src/main/main.exe $(ARGS)

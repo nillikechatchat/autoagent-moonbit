@@ -40,17 +40,17 @@ PATH="$HOME/.moon/bin:$PATH" moon version
 # Check source code
 PATH="$HOME/.moon/bin:$PATH" moon check
 
-# Build project
-PATH="$HOME/.moon/bin:$PATH" moon build
-
 # Run tests
 PATH="$HOME/.moon/bin:$PATH" moon test
 
+# Build native runtime
+PATH="$HOME/.moon/bin:$PATH" moon build --target native --release
+
 # Initialize workspace
-make init
+./scripts/autoagent.sh init
 
 # Start interactive session
-make repl
+./scripts/autoagent.sh chat
 ```
 
 ### 第一个 Agent
@@ -58,7 +58,7 @@ make repl
 启动交互式 shell：
 
 ```bash
-make repl
+./scripts/autoagent.sh chat
 ```
 
 输入目标：
@@ -67,7 +67,7 @@ make repl
 build a chatbot for my website
 ```
 
-运行后会得到面向目标的实施脚手架、安全检查清单和操作工作流。会话会保存到 `.autoagent/workspace/sessions/`。
+有 LLM API key 时会进入真实多轮 agent loop。无 API key 时会回退到 MoonBit deterministic provider。会话会保存到 `.autoagent/workspace/sessions/`。
 
 ---
 
@@ -76,8 +76,9 @@ build a chatbot for my website
 ### 命令格式
 
 ```bash
-moon run src/main -- [OPTIONS] [GOAL]
-./scripts/autoagent.sh [init|chat|run]
+./_build/native/release/build/src/main/main.exe [OPTIONS] [GOAL]
+./_build/native/release/build/src/main/main.exe --json '{"cmd":"plan","goal":"..."}'
+./scripts/autoagent.sh [init|chat|run|tools|memory]
 ```
 
 ### 参数
@@ -90,8 +91,7 @@ moon run src/main -- [OPTIONS] [GOAL]
 | `-c, --config` | 显示当前配置 |
 | `--skills` | 列出可用 skills |
 | `--skill <NAME>` | 查看 skill 详情 |
-| `--max-steps <N>` | 覆盖最大步骤数 |
-| `--verbose` | 显示详细 trace 输出 |
+| `--json <REQUEST>` | 执行 MoonBit JSON protocol |
 
 ### 示例
 
@@ -103,59 +103,33 @@ moon run src/main -- [OPTIONS] [GOAL]
 ./scripts/autoagent.sh chat
 
 # 显示帮助
-moon run src/main -- --help
+./_build/native/release/build/src/main/main.exe --help
 
 # 显示版本
-moon run src/main -- --version
+./_build/native/release/build/src/main/main.exe --version
 
 # 显示当前配置
-moon run src/main -- --config
+./_build/native/release/build/src/main/main.exe --config
 
 # 运行自定义目标
-moon run src/main -- "build a chatbot for my website"
+./_build/native/release/build/src/main/main.exe "build a chatbot for my website"
 
-# 覆盖最大步骤数
-moon run src/main -- --max-steps 5 "plan a database migration"
+# JSON protocol: plan
+./_build/native/release/build/src/main/main.exe --json '{"cmd":"plan","goal":"build a chatbot"}'
 
-# 详细输出模式
-moon run src/main -- --verbose "create a research assistant"
-
-# 组合使用
-moon run src/main -- --verbose --max-steps 2 "design a REST API"
+# JSON protocol: parse
+./_build/native/release/build/src/main/main.exe --json '{"cmd":"parse","response":"Hello"}'
 ```
 
 ### 交互式命令
 
 | 命令 | 说明 |
 |------|------|
-| `/help` | 显示交互式命令 |
-| `/status` | 显示当前工作区、会话和步数 |
-| `/config` | 显示运行时配置 |
 | `/history` | 输出当前会话日志 |
-| `/memory` | 输出记忆文件位置 |
 | `/skills` | 列出可用 skills |
 | `/skill NAME` | 查看 skill 详情 |
-| `/run N` | 调整后续轮次的最大步骤数 |
-| `/save TEXT` | 将经验写入 `experiences.md` |
+| `/clear` | 清空会话记忆 JSON |
 | `/quit` | 退出并保留会话日志 |
-
-### 详细输出模式
-
-使用 `--verbose` 会输出结构化 trace：
-
-```txt
-=== AutoAgent Trace ===
-Goal: create a research assistant
-State: completed
-Stop: completed all planned steps
-Steps: 3
-Observations: 3
-
-=== Answer ===
-AutoAgent provider=deterministic
-Goal: create a research assistant
-...
-```
 
 ---
 
@@ -210,14 +184,14 @@ Goal: create a research assistant
 
 ### 配置优先级
 
-1. CLI 参数（`--max-steps`）优先级最高。
+1. LLM 环境变量：`MCAI_LLM_API_KEY`、`MCAI_LLM_BASE_URL`、`MCAI_LLM_MODEL`。
 2. 配置文件 `.autoagent/config.json`。
-3. 代码内默认值。
+3. MoonBit 代码内默认值。
 
 ### 查看当前配置
 
 ```bash
-moon run src/main -- --config
+./_build/native/release/build/src/main/main.exe --config
 ```
 
 输出：

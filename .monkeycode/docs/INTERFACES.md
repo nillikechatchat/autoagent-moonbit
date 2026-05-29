@@ -364,15 +364,13 @@ CLI 入口，支持以下参数：
 | `-h, --help` | 显示帮助 |
 | `-v, --version` | 显示版本 |
 | `-c, --config` | 显示配置 |
-| `--max-steps <N>` | 覆盖最大步骤数 |
-| `--verbose` | 详细输出 |
+| `--skills` | 列出 skills |
+| `--skill <NAME>` | 查看单个 skill |
+| `--json <REQUEST>` | 执行 MoonBit JSON protocol |
 
 运行方式：
 
 ```bash
-# Print interactive entrypoints
-moon run src/main
-
 # Run one-shot mode with custom goal
 moon run src/main -- "build a chatbot"
 
@@ -396,11 +394,11 @@ Shell commands:
 |------|------|
 | `init` | 创建 `.autoagent/config.json`、sessions、memory 和 artifacts 目录 |
 | `chat` | 创建会话日志并进入交互循环 |
-| `run` | 调用原生二进制执行一次 one-shot run |
-| `/status` | 输出当前 workspace、session 和 max steps |
+| `run` | 通过 MoonBit JSON protocol 执行一次 agent loop |
 | `/history` | 输出当前会话日志 |
-| `/memory` | 输出记忆文件位置 |
-| `/save TEXT` | 追加经验记忆 |
+| `/skills` | 列出 skills |
+| `/skill NAME` | 查看单个 skill |
+| `/clear` | 清空 JSON 会话记忆 |
 
 ## CLI Module
 
@@ -582,6 +580,66 @@ pub fn Agent::with_skills(
 ```
 
 创建带 skill 支持的 Agent。skill 工具自动合并，skill 指令注入系统提示。
+
+## MoonBit JSON Protocol
+
+Defined in `src/autoagent/agent_loop.mbt` and exposed by `src/main/main.mbt`.
+
+### AgentAction
+
+```moonbit
+pub(all) enum AgentAction {
+  Think(String)
+  CallTool(String, String)
+  Reply(String)
+  Error(String)
+}
+```
+
+`AgentAction` 是 MoonBit core 给 Shell I/O 层的唯一决策输出。
+
+### AgentAction::to_json
+
+```moonbit
+pub fn AgentAction::to_json(self : AgentAction) -> String
+```
+
+将 action 序列化为 Shell 可解析 JSON。
+
+### Conversation
+
+```moonbit
+pub(all) struct Conversation {
+  mut turns : Array[Turn]
+}
+```
+
+`Conversation` 负责多轮消息建模、tool block 提取和消息 JSON 渲染。
+
+### json_field
+
+```moonbit
+pub fn json_field(json : String, field : String) -> String
+```
+
+轻量 JSON 字段读取器，支持字符串转义，用于 `--json` protocol 的最小解析边界。
+
+### CLI Protocol
+
+```bash
+./_build/native/release/build/src/main/main.exe --json '{"cmd":"plan","goal":"build a chatbot"}'
+./_build/native/release/build/src/main/main.exe --json '{"cmd":"parse","response":"Hello"}'
+./_build/native/release/build/src/main/main.exe --json '{"cmd":"tool_result","tool":"read_file","result":"content"}'
+```
+
+输出格式：
+
+```json
+{"action":"think","reason":"Step 1/3: scaffold - Setting up the foundation."}
+{"action":"tool","name":"read_file","input":"README.md"}
+{"action":"reply","text":"Hello"}
+{"action":"error","message":"Missing 'goal' field"}
+```
 
 ## Test Interface
 
