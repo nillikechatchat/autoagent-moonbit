@@ -191,6 +191,21 @@ pub fn run_repl(config : LLMConfig, session_dir : String, memory_file : String) 
       }
       "/skills" => {
         println("Built-in tools: read_file, write_file, list_files, run_command, search_web")
+        println("Skills: research, code-review, docs, testing, code-gen, debug, refactor")
+      }
+      "/config" => {
+        println("Model: " + state.config.model)
+        println("Base URL: " + state.config.base_url)
+        let key_status = if state.config.api_key != "" { "(configured)" } else { "(not set)" }
+        println("API Key: " + key_status)
+        println("Messages: " + state.messages.length().to_string())
+      }
+      "/status" => {
+        println("Session: " + state.session_file)
+        println("Memory: " + state.memory_file)
+        println("Messages: " + state.messages.length().to_string())
+        println("Max rounds: " + state.max_rounds.to_string())
+        println("Project root: " + state.project_root)
       }
       "/help" => {
         print_help()
@@ -299,7 +314,7 @@ fn print_banner(config : LLMConfig) -> Unit {
   } else {
     println(dim_text("  Mode: deterministic (no API key)"))
   }
-  println(dim_text("  Commands: /help /clear /history /quit"))
+  println(dim_text("  Commands: /help /clear /history /skills /config /status /quit"))
   println("")
 }
 
@@ -347,10 +362,15 @@ fn print_help() -> Unit {
   println("    /help      Show this help")
   println("    /clear     Clear conversation memory")
   println("    /history   Show session history")
-  println("    /skills    List available tools")
+  println("    /skills    List available tools and skills")
+  println("    /config    Show current configuration")
+  println("    /status    Show session status")
   println("    /quit      Exit")
   println("")
   println(ansi_bold() + "  Tools:" + ansi_reset())
   println("    read_file, write_file, list_files, run_command, search_web")
+  println("")
+  println(ansi_bold() + "  Skills:" + ansi_reset())
+  println("    research, code-review, docs, testing, code-gen, debug, refactor")
   println("")
 }

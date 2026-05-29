@@ -150,5 +150,35 @@ pub fn default_eval_suite() -> EvalSuite {
     expected_contains=["help"],
   ))
 
+  suite.add(EvalCase::new(
+    "file operation request",
+    "read the README file",
+    expected_contains=["read", "README"],
+  ))
+
+  suite.add(EvalCase::new(
+    "code generation request",
+    "generate a REST API handler",
+    expected_contains=["generate", "API"],
+  ))
+
+  suite.add(EvalCase::new(
+    "debug request",
+    "debug the login error",
+    expected_contains=["debug", "error"],
+  ))
+
+  suite.add(EvalCase::new(
+    "refactor request",
+    "refactor the auth module",
+    expected_contains=["refactor"],
+  ))
+
+  suite.add(EvalCase::new(
+    "test request",
+    "write tests for the API",
+    expected_contains=["test", "API"],
+  ))
+
   suite
 }
