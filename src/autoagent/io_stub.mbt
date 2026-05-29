@@ -5,47 +5,48 @@
 ///
 
 ///|
-pub fn http_post(url : String, body : String, auth_token~ : String = "") -> String {
+pub fn http_post(_url : String, _body : String, auth_token~ : String = "") -> String {
+  ignore(auth_token)
   ""
 }
 
 ///|
-pub fn read_file(path : String) -> String {
+pub fn read_file(_path : String) -> String {
   ""
 }
 
 ///|
-pub fn write_file(path : String, content : String) -> Bool {
+pub fn write_file(_path : String, _content : String) -> Bool {
   false
 }
 
 ///|
-pub fn mkdir(path : String) -> Bool {
+pub fn mkdir(_path : String) -> Bool {
   false
 }
 
 ///|
-pub fn list_dir(path : String) -> String {
+pub fn list_dir(_path : String) -> String {
   ""
 }
 
 ///|
-pub fn file_exists(path : String) -> Bool {
+pub fn file_exists(_path : String) -> Bool {
   false
 }
 
 ///|
-pub fn exec_command(cmd : String) -> String {
+pub fn exec_command(_cmd : String) -> String {
   ""
 }
 
 ///|
-pub fn get_env(key : String) -> String {
+pub fn get_env(_key : String) -> String {
   ""
 }
 
 ///|
-pub fn set_env(key : String, value : String) -> Bool {
+pub fn set_env(_key : String, _value : String) -> Bool {
   false
 }
 

@@ -64,23 +64,27 @@ fn exec_read_file(input : String, root : String) -> ToolResult {
 fn exec_write_file(input : String, root : String) -> ToolResult {
   try {
     let parsed = @json.parse(input)
-    match (parsed.value("path"), parsed.value("content")) {
-      (Some(Json::String(path)), Some(Json::String(content))) => {
-        match safe_path(path, root) {
-          Ok(full_path) => {
-            // Create parent directory if needed
-            let parts = full_path.split("/").to_array()
-            if parts.length() > 1 {
-              let dir = parts[0:parts.length() - 1].join("/")
-              if dir != "" { ignore(mkdir(dir)) }
-            }
-            if write_file(full_path, content) {
-              ToolSuccess("Wrote " + content.length().to_string() + " bytes to " + path)
-            } else {
-              ToolError("Failed to write: " + path)
+    match parsed {
+      Object(obj) => {
+        match (obj.get("path"), obj.get("content")) {
+          (Some(Json::String(path)), Some(Json::String(content))) => {
+            match safe_path(path, root) {
+              Ok(full_path) => {
+                let parts = full_path.split("/").to_array()
+                if parts.length() > 1 {
+                  let dir = parts[0:parts.length() - 1].join("/")
+                  if dir != "" { ignore(mkdir(dir)) }
+                }
+                if write_file(full_path, content) {
+                  ToolSuccess("Wrote " + content.length().to_string() + " bytes to " + path)
+                } else {
+                  ToolError("Failed to write: " + path)
+                }
+              }
+              Err(msg) => ToolError(msg)
             }
           }
-          Err(msg) => ToolError(msg)
+          _ => ToolError("Invalid write_file input. Expected JSON with 'path' and 'content'.")
         }
       }
       _ => ToolError("Invalid write_file input. Expected JSON with 'path' and 'content'.")

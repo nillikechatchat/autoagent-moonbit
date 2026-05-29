@@ -55,8 +55,13 @@ pub fn parse_response(response : String) -> ResponseAction {
     let json_str = response[json_start:end].trim().to_owned()
     try {
       let parsed = @json.parse(json_str)
-      match (parsed.value("name"), parsed.value("input")) {
-        (Some(Json::String(name)), Some(Json::String(input))) => CallTool(name, input)
+      match parsed {
+        Object(obj) => {
+          match (obj.get("name"), obj.get("input")) {
+            (Some(Json::String(name)), Some(Json::String(input))) => CallTool(name, input)
+            _ => Reply(response)
+          }
+        }
         _ => Reply(response)
       }
     } catch {
@@ -90,7 +95,7 @@ pub fn ReplState::run_turn(self : ReplState, user_input : String) -> String {
 
   let mut final_reply = ""
 
-  for round in 0..<self.max_rounds {
+  for _round in 0..<self.max_rounds {
     // Show thinking indicator
     print_thinking()
 
@@ -258,8 +263,13 @@ fn load_memory(memory_file : String) -> Array[LLMMessage] {
     match parsed {
       Json::Array(items) => {
         items.filter_map(fn(item) {
-          match (item.value("role"), item.value("content")) {
-            (Some(Json::String(role)), Some(Json::String(content))) => Some({ role, content })
+          match item {
+            Object(obj) => {
+              match (obj.get("role"), obj.get("content")) {
+                (Some(Json::String(role)), Some(Json::String(content))) => Some({ role, content })
+                _ => None
+              }
+            }
             _ => None
           }
         })
