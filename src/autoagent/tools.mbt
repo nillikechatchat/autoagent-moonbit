@@ -20,6 +20,9 @@ pub fn execute_tool(name : String, input : String, project_root~ : String = "") 
     "list_files" => exec_list_files(input, root)
     "run_command" => exec_run_command(input)
     "search_web" => exec_search_web(input)
+    "find_files" => exec_find_files(input, root)
+    "git_status" => exec_git_status(root)
+    "git_diff" => exec_git_diff(input, root)
     _ => ToolError("Unknown tool: " + name)
   }
 }
@@ -247,9 +250,54 @@ pub fn get_tool_descriptions() -> String {
   "- list_files: List directory. Input: directory path\n" +
   "- run_command: Execute a command. Input: shell command\n" +
   "- search_web: Search the web. Input: search query\n" +
+  "- find_files: Find files by name pattern. Input: glob pattern (e.g., \"*.mbt\")\n" +
+  "- git_status: Show git working tree status. Input: (empty)\n" +
+  "- git_diff: Show git diff. Input: file path or (empty) for all\n" +
   "\nTo use a tool, output exactly this format:\n" +
   "```tool\n" +
   "{\"name\":\"tool_name\",\"input\":\"tool_input\"}\n" +
   "```\n" +
   "When no tool is needed, respond normally."
+}
+
+// ============================================================
+// Additional tools for mature product
+// ============================================================
+
+///|
+fn exec_find_files(pattern : String, root : String) -> ToolResult {
+  let cmd = "find " + root + " -name '" + pattern + "' -not -path '*/_build/*' -not -path '*/.git/*' 2>/dev/null | head -50"
+  let output = exec_command(cmd)
+  if output == "" {
+    ToolSuccess("No files found matching: " + pattern)
+  } else {
+    ToolSuccess(output)
+  }
+}
+
+///|
+fn exec_git_status(root : String) -> ToolResult {
+  let cmd = "cd " + root + " && git status --short 2>/dev/null || echo 'Not a git repository'"
+  let output = exec_command(cmd)
+  if output == "" {
+    ToolSuccess("Working tree clean")
+  } else {
+    ToolSuccess(output)
+  }
+}
+
+///|
+fn exec_git_diff(input : String, root : String) -> ToolResult {
+  let file_arg = if input == "" { "" } else { " -- " + input }
+  let cmd = "cd " + root + " && git diff --stat" + file_arg + " 2>/dev/null || echo 'Not a git repository'"
+  let output = exec_command(cmd)
+  if output == "" {
+    ToolSuccess("No changes")
+  } else {
+    if output.length() > 4000 {
+      ToolSuccess(output[:4000].to_owned() + "\n... (truncated)")
+    } else {
+      ToolSuccess(output)
+    }
+  }
 }
