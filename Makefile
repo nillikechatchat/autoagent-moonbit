@@ -16,8 +16,8 @@ IO_C := native/io.c
 IO_O := _build/native/release/build/io.o
 RUNTIME_O := _build/native/release/build/runtime.o
 
-# Linker flags (libcurl for HTTP, no headers needed)
-LDFLAGS := -lcurl -lm
+# Linker flags (no external dependencies for portability)
+LDFLAGS := -lm
 
 help:
 	@echo "AutoAgent Build Targets:"

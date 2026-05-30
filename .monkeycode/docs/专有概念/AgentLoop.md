@@ -1,6 +1,6 @@
 # Agent Loop
 
-Agent Loop 是 AutoAgent 的核心执行语义。当前实现位于 `src/autoagent/agent.mbt` 的 `Agent::run`。
+Agent Loop 是 AutoAgent 的核心执行语义。项目包含 legacy deterministic loop 和当前 REPL loop 两条路径：`src/autoagent/agent.mbt` 提供可测试的确定性 loop，`src/autoagent/repl.mbt` 提供面向 CLI 的 LLM tool-call loop。
 
 ## Current Flow
 
@@ -37,16 +37,16 @@ sequenceDiagram
 - 工具执行结果统一写入 Memory。
 - Provider 使用目标、Memory 摘要和工具结果生成最终响应。
 
-## Current Limitations
+## Current Boundaries
 
-- 循环当前按步骤数组顺序执行，尚未实现动态反思或 ReAct 式迭代。
-- 当前 Provider 只做确定性拼接，尚未生成新的工具调用。
-- 当前没有中断、重试或人工批准机制。
+- Legacy deterministic loop 按 Planner 步骤数组顺序执行，用于稳定测试和教学说明。
+- REPL loop 支持 LLM 生成 `tool` fenced block 后执行 runtime tools，并把工具结果送回对话上下文。
+- 人工批准、dry-run、结构化 ToolCall schema 和复杂反思策略属于后续增强。
 
 ## Evolution Direction
 
-- 增加 stop condition。
 - 增加 tool approval hook。
+- 增加结构化 ToolCall schema。
 - 增加 planner feedback loop。
-- 增加 structured trace。
+- 将 REPL loop trace 与 legacy `RunTrace` 对齐。
 - 增加 run summary。

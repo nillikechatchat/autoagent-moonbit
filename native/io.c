@@ -14,31 +14,14 @@
 #include <time.h>
 
 /* ============================================================
- * libcurl forward declarations (no headers required)
+ * HTTP stubs (no libcurl dependency for portability)
  * ============================================================ */
 
-typedef void CURL;
-typedef int CURLcode;
-typedef int CURLoption;
-
-#define CURLOPT_URL 10002
-#define CURLOPT_WRITEFUNCTION 20011
-#define CURLOPT_WRITEDATA 10001
-#define CURLOPT_POST 47
-#define CURLOPT_POSTFIELDS 10015
-#define CURLOPT_POSTFIELDSIZE 60
-#define CURLOPT_HTTPHEADER 10023
-#define CURLOPT_TIMEOUT 13
-#define CURLOPT_CUSTOMREQUEST 10036
-#define CURLOPT_HTTPGET 80
-#define CURLE_OK 0
-
-extern CURL *curl_easy_init(void);
-extern CURLcode curl_easy_setopt(CURL *curl, CURLoption option, ...);
-extern CURLcode curl_easy_perform(CURL *curl);
-extern void curl_easy_cleanup(CURL *curl);
-extern void *curl_slist_append(void *list, const char *data);
-extern void curl_slist_free_all(void *list);
+static char *http_post_not_available(void) {
+    char *out = (char *)malloc(64);
+    if (out) strcpy(out, "HTTP not available (libcurl not linked)");
+    return out;
+}
 
 /* ============================================================
  * Memory helpers for MoonBit bytes interop
@@ -56,139 +39,25 @@ static char *mbt_strndup(const char *s, int len) {
  * HTTP client (via libcurl, no headers needed)
  * ============================================================ */
 
-struct curl_write_buf {
-    char *data;
-    int size;
-    int cap;
-};
-
-static size_t curl_write_cb(void *ptr, size_t size, size_t nmemb, void *ud) {
-    struct curl_write_buf *buf = (struct curl_write_buf *)ud;
-    int total = (int)(size * nmemb);
-    if (buf->size + total + 1 > buf->cap) {
-        buf->cap = (buf->size + total + 1) * 2;
-        buf->data = (char *)realloc(buf->data, buf->cap);
-    }
-    memcpy(buf->data + buf->size, ptr, total);
-    buf->size += total;
-    buf->data[buf->size] = '\0';
-    return total;
-}
-
 /*
  * autoagent_http_post(url, url_len, body, body_len, auth, auth_len) -> response
- * Returns a null-terminated string. Caller must free.
+ * Stub: returns error message. Caller must free.
  */
 char *autoagent_http_post(const char *url, int url_len,
                           const char *body, int body_len,
                           const char *auth, int auth_len) {
-    CURL *curl = curl_easy_init();
-    if (!curl) return NULL;
-
-    char *url_s = mbt_strndup(url, url_len);
-    char *body_s = mbt_strndup(body, body_len);
-
-    struct curl_write_buf buf = {NULL, 0, 0};
-    void *headers = NULL;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-
-    if (auth && auth_len > 0) {
-        char hdr[512];
-        int n = auth_len < 480 ? auth_len : 480;
-        memcpy(hdr, "Authorization: Bearer ", 22);
-        memcpy(hdr + 22, auth, n);
-        hdr[22 + n] = '\0';
-        headers = curl_slist_append(headers, hdr);
-    }
-
-    curl_easy_setopt(curl, CURLOPT_URL, url_s);
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body_s);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)body_len);
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_cb);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
-
-    CURLcode res = curl_easy_perform(curl);
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-    free(url_s);
-    free(body_s);
-
-    if (res != CURLE_OK) {
-        if (buf.data) free(buf.data);
-        return NULL;
-    }
-    return buf.data;
+    (void)url; (void)url_len; (void)body; (void)body_len; (void)auth; (void)auth_len;
+    return http_post_not_available();
 }
 
 /*
- * Streaming HTTP POST: prints response chunks to stdout in real-time.
- * Returns the complete response as a string. Caller must free.
- * Each chunk is printed to stdout immediately for streaming UX.
+ * autoagent_http_post_stream - Stub
  */
-static size_t curl_stream_write_cb(void *ptr, size_t size, size_t nmemb, void *ud) {
-    struct curl_write_buf *buf = (struct curl_write_buf *)ud;
-    int total = (int)(size * nmemb);
-
-    /* Print chunk to stdout immediately for streaming */
-    fwrite(ptr, 1, total, stdout);
-    fflush(stdout);
-
-    /* Also accumulate for return value */
-    if (buf->size + total + 1 > buf->cap) {
-        buf->cap = (buf->size + total + 1) * 2;
-        buf->data = (char *)realloc(buf->data, buf->cap);
-    }
-    memcpy(buf->data + buf->size, ptr, total);
-    buf->size += total;
-    buf->data[buf->size] = '\0';
-    return total;
-}
-
 char *autoagent_http_post_stream(const char *url, int url_len,
                                  const char *body, int body_len,
                                  const char *auth, int auth_len) {
-    CURL *curl = curl_easy_init();
-    if (!curl) return NULL;
-
-    char *url_s = mbt_strndup(url, url_len);
-    char *body_s = mbt_strndup(body, body_len);
-
-    struct curl_write_buf buf = {NULL, 0, 0};
-    void *headers = NULL;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-
-    if (auth && auth_len > 0) {
-        char hdr[512];
-        int n = auth_len < 480 ? auth_len : 480;
-        memcpy(hdr, "Authorization: Bearer ", 22);
-        memcpy(hdr + 22, auth, n);
-        hdr[22 + n] = '\0';
-        headers = curl_slist_append(headers, hdr);
-    }
-
-    curl_easy_setopt(curl, CURLOPT_URL, url_s);
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body_s);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)body_len);
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_stream_write_cb);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
-
-    CURLcode res = curl_easy_perform(curl);
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-    free(url_s);
-    free(body_s);
-
-    if (res != CURLE_OK) {
-        if (buf.data) free(buf.data);
-        return NULL;
-    }
-    return buf.data;
+    (void)url; (void)url_len; (void)body; (void)body_len; (void)auth; (void)auth_len;
+    return http_post_not_available();
 }
 
 /* ============================================================
@@ -391,4 +260,44 @@ long long autoagent_time_ms(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+
+/*
+ * autoagent_read_line() -> line from stdin
+ * Returns null-terminated string. Caller must free.
+ * Returns NULL on EOF.
+ */
+char *autoagent_read_line(void) {
+    int cap = 256, size = 0;
+    char *buf = (char *)malloc(cap);
+    if (!buf) return NULL;
+
+    int c;
+    while ((c = fgetc(stdin)) != EOF) {
+        if (c == '\n') break;
+        if (size + 1 >= cap) {
+            cap *= 2;
+            buf = (char *)realloc(buf, cap);
+            if (!buf) return NULL;
+        }
+        buf[size++] = (char)c;
+    }
+
+    if (size == 0 && c == EOF) {
+        free(buf);
+        return NULL;
+    }
+
+    buf[size] = '\0';
+    return buf;
+}
+
+/*
+ * autoagent_stdin_eof() -> 1 if stdin is at EOF, 0 otherwise
+ */
+int autoagent_stdin_eof(void) {
+    int c = fgetc(stdin);
+    if (c == EOF) return 1;
+    ungetc(c, stdin);
+    return 0;
 }

@@ -1,12 +1,12 @@
 # Tool Allowlist
 
-Tool Allowlist 是 AutoAgent 的安全边界。Agent 只能执行注册到 `tools` 数组中的工具。
+Tool Allowlist 是 AutoAgent 的安全边界。Legacy Agent 只能执行注册到 `tools` 数组中的低风险工具；REPL runtime 只能执行 `execute_tool` 显式分发的工具名。
 
 ## Current Implementation
 
-相关文件：`src/autoagent/tool.mbt` 和 `src/autoagent/agent.mbt`。
+相关文件：`src/autoagent/tool.mbt`、`src/autoagent/agent.mbt`、`src/autoagent/tools.mbt` 和 `src/autoagent/repl.mbt`。
 
-默认工具在 `default_agent` 中注册：
+Legacy 默认工具在 `default_agent` 中注册：
 
 - `scaffold`
 - `checklist`
@@ -25,9 +25,9 @@ Tool Allowlist 是 AutoAgent 的安全边界。Agent 只能执行注册到 `tool
 
 ## Security Boundary
 
-当前默认工具只生成文本建议。这个设计让项目可以安全演示 Agent loop，同时保留未来扩展外部工具的接口位置。
+Legacy 默认工具只生成文本建议。REPL runtime tools 可访问文件、命令、HTTP、Git、环境和系统信息，所有工具名都通过 `execute_tool` match 分支显式列出。
 
-当前执行路径默认只允许低风险工具运行。工具失败后 Agent 停止后续步骤，并在 `RunTrace` 中记录失败状态和停止原因。
+当前执行路径默认只允许低风险 skill tools 运行。`run_command` 内置危险命令拒绝列表，文件路径通过 project root 做边界检查，工具失败后 Agent 停止后续步骤，并在 `RunTrace` 中记录失败状态和停止原因。
 
 ## Extension Rules
 

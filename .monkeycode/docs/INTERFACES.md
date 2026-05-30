@@ -174,7 +174,7 @@ Defined in `src/autoagent/agent.mbt`.
 pub fn default_agent() -> Agent
 ```
 
-返回内置 AutoAgent，包含确定性 Provider 和三个默认工具。
+返回内置 AutoAgent，包含确定性 Provider、runtime tools 和 skill tools。
 
 ### Agent::new
 
@@ -378,27 +378,35 @@ moon run src/main -- "build a chatbot"
 moon run src/main -- --help
 ```
 
-## Interactive Shell Entry
+## Interactive REPL Commands
 
-Defined in `scripts/autoagent.sh`.
+Defined in `src/autoagent/repl.mbt` and exposed by the native CLI.
 
 ```bash
-./scripts/autoagent.sh init
-./scripts/autoagent.sh chat
-./scripts/autoagent.sh run "build a chatbot for my website"
+./_build/native/release/build/src/main/main.exe chat
+./_build/native/release/build/src/main/main.exe run "build a chatbot for my website"
 ```
 
-Shell commands:
+REPL commands:
 
 | 命令 | 说明 |
 |------|------|
-| `init` | 创建 `.autoagent/config.json`、sessions、memory 和 artifacts 目录 |
 | `chat` | 创建会话日志并进入交互循环 |
-| `run` | 通过 MoonBit JSON protocol 执行一次 agent loop |
+| `run <goal>` | 单次运行 REPL agent loop |
+| `/help` | 显示 REPL 帮助 |
 | `/history` | 输出当前会话日志 |
-| `/skills` | 列出 skills |
-| `/skill NAME` | 查看单个 skill |
+| `/skills` | 列出 runtime tools 和 skills |
+| `/tools` | 显示 runtime tool 描述 |
+| `/config` | 显示 LLM 配置状态 |
+| `/status` | 显示会话状态 |
+| `/stats` | 显示会话统计 |
 | `/clear` | 清空 JSON 会话记忆 |
+| `/resume` | 恢复最近会话 |
+| `/export` | 导出当前会话 |
+| `/search <query>` | 搜索会话历史 |
+| `/clear-history` | 清空当前会话历史 |
+| `/version` | 显示版本 |
+| `/quit` | 退出 REPL |
 
 ## CLI Module
 
@@ -412,7 +420,10 @@ pub(all) struct CliArgs {
   mut show_help : Bool
   mut show_version : Bool
   mut show_config : Bool
+  mut show_skills : Bool
+  mut show_skill : String
   mut max_steps : Int?
+  mut step : Int?
   mut verbose : Bool
 }
 ```
@@ -538,7 +549,7 @@ pub(all) struct SkillRegistry {
 pub fn default_skill_registry() -> SkillRegistry
 ```
 
-返回包含 4 个内置 skill 的注册表。
+返回包含 10 个内置 skill 和 20 个 skill tools 的注册表。
 
 ### SkillRegistry::register
 

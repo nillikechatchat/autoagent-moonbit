@@ -42,15 +42,29 @@ graph TD
 
 ### 工具执行 (`src/autoagent/tools.mbt`)
 
-- 5 个 I/O 工具：read_file, write_file, list_files, run_command, search_web
+- 83 个 runtime 工具：read_file, write_file, edit_file, list_files, run_command, search_web, find_files, code_search, git_status, git_diff, memory_write, memory_read, env_info, project_info, http_get, file_info, timestamp, env_get, string_replace, uuid_generate, get_cwd, head_file, tail_file, count_lines, grep_file, diff_files, copy_file, move_file, append_file, dir_size, disk_usage, sort_file, uniq_file, wc_file, basename, dirname, realpath, which, date, mkdir, is_dir, truncate_file, grep_count, grep_context, file_type, file_permissions, file_owner, file_modified, file_size, list_dir_detailed, find_by_type, find_by_size, grep_recursive, find_by_name, find_by_time, file_checksum, compress_file, decompress_file, tar_create, tar_extract, zip_create, zip_extract, is_readable, is_writable, is_executable, file_extension, file_lines, file_words, file_chars, system_info, memory_info, cpu_info, network_info, process_list, env_list, uptime, hostname, whoami, who, last, command_exists, shell_info, path_list
 - 安全策略：路径限制、命令拒绝列表
 - URL 编码和 HTML 解析
 
 ### 技能系统 (`src/autoagent/skill.mbt`)
 
-- 7 个内置技能，14 个专用工具
+- 10 个内置技能，20 个专用工具
 - 目标驱动的技能选择
 - 技能工具执行和结果返回
+- 每个技能对应一个员工/专家角色，包含职责说明、关键词和工具清单
+
+| 员工角色 | 职责 |
+|----------|------|
+| research | 调研来源、事实、风险和行动建议 |
+| code-review | 审查正确性、可读性、设计、安全和性能 |
+| docs | 生成技术文档草稿和概念解释 |
+| testing | 设计测试计划和覆盖率补强方案 |
+| code-gen | 按 TDD 顺序拆解实现和脚手架 |
+| debug | 复现、隔离、定位、修复和预防问题 |
+| refactor | 小步执行行为保持的代码改善 |
+| security | 检查常见漏洞并给出修复策略 |
+| performance | 定位瓶颈并给出可测量优化方案 |
+| architecture | 拆分组件、定义接口和评审权衡 |
 
 ### C I/O 层 (`native/io.c`)
 
