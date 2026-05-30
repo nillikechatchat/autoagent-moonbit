@@ -27,9 +27,15 @@ static char *http_post_not_available(void) {
  * Memory helpers for MoonBit bytes interop
  * ============================================================ */
 
+static char *mbt_empty_string(void) {
+    char *out = (char *)malloc(1);
+    if (out) out[0] = '\0';
+    return out;
+}
+
 static char *mbt_strndup(const char *s, int len) {
     char *out = (char *)malloc(len + 1);
-    if (!out) return NULL;
+    if (!out) return mbt_empty_string();
     memcpy(out, s, len);
     out[len] = '\0';
     return out;
@@ -77,13 +83,13 @@ char *autoagent_read_file(const char *path, int path_len) {
     if (!f) {
         autoagent_last_errno = errno;
         free(p);
-        return NULL;
+        return mbt_empty_string();
     }
     fseek(f, 0, SEEK_END);
     long sz = ftell(f);
     fseek(f, 0, SEEK_SET);
     char *buf = (char *)malloc(sz + 1);
-    if (!buf) { fclose(f); free(p); return NULL; }
+    if (!buf) { fclose(f); free(p); return mbt_empty_string(); }
     long rd = fread(buf, 1, sz, f);
     buf[rd] = '\0';
     fclose(f);
@@ -135,7 +141,7 @@ char *autoagent_list_dir(const char *path, int path_len) {
     if (!d) {
         autoagent_last_errno = errno;
         free(p);
-        return NULL;
+        return mbt_empty_string();
     }
     int cap = 4096, size = 0;
     char *buf = (char *)malloc(cap);
@@ -186,7 +192,7 @@ char *autoagent_exec(const char *cmd, int cmd_len) {
 
     FILE *p = popen(full_cmd, "r");
     free(full_cmd);
-    if (!p) return NULL;
+    if (!p) return mbt_empty_string();
 
     int cap = 8192, size = 0;
     char *buf = (char *)malloc(cap);
@@ -214,7 +220,11 @@ char *autoagent_getenv(const char *key, int key_len) {
     char *k = mbt_strndup(key, key_len);
     char *v = getenv(k);
     free(k);
-    if (!v) return NULL;
+    if (!v) {
+        char *empty = (char *)malloc(1);
+        if (empty) empty[0] = '\0';
+        return empty;
+    }
     return strdup(v);
 }
 
@@ -242,7 +252,7 @@ int autoagent_setenv(const char *key, int key_len,
 char *autoagent_getcwd_alloc(void) {
     char buf[4096];
     if (getcwd(buf, sizeof(buf))) return strdup(buf);
-    return NULL;
+    return mbt_empty_string();
 }
 
 /*
@@ -270,7 +280,7 @@ long long autoagent_time_ms(void) {
 char *autoagent_read_line(void) {
     int cap = 256, size = 0;
     char *buf = (char *)malloc(cap);
-    if (!buf) return NULL;
+    if (!buf) return mbt_empty_string();
 
     int c;
     while ((c = fgetc(stdin)) != EOF) {
@@ -278,14 +288,14 @@ char *autoagent_read_line(void) {
         if (size + 1 >= cap) {
             cap *= 2;
             buf = (char *)realloc(buf, cap);
-            if (!buf) return NULL;
+            if (!buf) return mbt_empty_string();
         }
         buf[size++] = (char)c;
     }
 
     if (size == 0 && c == EOF) {
         free(buf);
-        return NULL;
+        return mbt_empty_string();
     }
 
     buf[size] = '\0';
