@@ -162,7 +162,7 @@ pub fn format_answer(answer : String) -> String {
 pub fn banner() -> String {
   let mut out = ""
   out = out + "\n"
-  out = out + ansi_bold() + ansi_cyan() + "  AutoAgent v0.1.0" + ansi_reset() + "\n"
+  out = out + ansi_bold() + ansi_cyan() + "  AutoAgent v0.2.0" + ansi_reset() + "\n"
   out = out + dim_text("  A lightweight MoonBit Agent runtime") + "\n"
   out = out + "\n"
   out

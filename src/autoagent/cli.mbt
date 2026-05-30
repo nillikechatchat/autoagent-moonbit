@@ -94,15 +94,15 @@ pub fn show_help() -> Unit {
   println("  create a step-by-step plan for you.")
   println("")
   println("Quick Start:")
-  println("  make repl")
-  println("  ./scripts/autoagent.sh init")
-  println("  ./scripts/autoagent.sh chat")
-  println("  autoagent \"build a chatbot for my website\"")
+  println("  make init")
+  println("  make build-native")
+  println("  ./_build/native/release/build/src/main/main.exe chat")
+  println("  ./_build/native/release/build/src/main/main.exe run \"build a chatbot for my website\"")
   println("")
   println("Usage:")
   println("  autoagent [OPTIONS] [GOAL]")
   println("  moon run src/main -- [OPTIONS] [GOAL]")
-  println("  ./scripts/autoagent.sh [init|chat|run]")
+  println("  ./_build/native/release/build/src/main/main.exe [chat|run]")
   println("")
   println("Arguments:")
   println("  [GOAL]    What you want to build (be specific!)")
@@ -120,7 +120,7 @@ pub fn show_help() -> Unit {
   println("  - Be specific: 'build a chatbot' > 'help'")
   println("  - Use action verbs: build, create, design, write")
   println("  - Include the technology: 'React app', 'Python API'")
-  println("  - Use ./scripts/autoagent.sh chat for an interactive session")
+  println("  - Use the native binary chat command for an interactive session")
   println("  - Try --verbose to inspect traces")
   println("")
   println("More examples:")
@@ -132,7 +132,7 @@ pub fn show_help() -> Unit {
 
 ///|
 pub fn show_version() -> Unit {
-  println("AutoAgent v0.1.0")
+  println("AutoAgent v0.2.0")
   println("A lightweight MoonBit Agent runtime")
 }
 

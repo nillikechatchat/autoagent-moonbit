@@ -219,6 +219,12 @@ fn execute_builtin_skill_tool(skill_name : String, tool_name : String, input : S
     "debug-fix" => Success(debug_fix(input))
     "refactor-extract" => Success(refactor_extract(input))
     "refactor-simplify" => Success(refactor_simplify(input))
+    "security-scan" => Success(security_scan(input))
+    "security-fix" => Success(security_fix(input))
+    "perf-analyze" => Success(perf_analyze(input))
+    "perf-optimize" => Success(perf_optimize(input))
+    "arch-design" => Success(arch_design(input))
+    "arch-review" => Success(arch_review(input))
     _ => Failure("Skill tool not implemented: " + tool_name + " (skill: " + skill_name + ")")
   }
 }
@@ -229,12 +235,12 @@ fn execute_builtin_skill_tool(skill_name : String, tool_name : String, input : S
 
 ///|
 fn research_search(query : String) -> String {
-  "Here is what I found for '\{query}':\n\n1. Official docs and API references.\n2. Community guides and best practices.\n3. Technical blog posts with examples.\n4. Open source implementations.\n5. Comparison articles.\n\nWant me to summarize the key findings?"
+  "Research brief for '\{query}':\n\nSources to prioritize:\n1. Official documentation and API references.\n2. Release notes and migration guides.\n3. Maintainer examples and source repository samples.\n4. Production case studies and benchmark reports.\n5. Community guides after official sources are checked.\n\nOutput format:\n- Key facts with source type.\n- Risks and unknowns.\n- Recommended next action."
 }
 
 ///|
 fn research_summarize(topic : String) -> String {
-  "Summary for '\{topic}':\n\n- Well-established patterns exist in production systems.\n- Common pitfalls: missing error handling, no observability.\n- Recommended: start simple, add tests, then optimize.\n\nNext steps:\n1. Build a minimal prototype.\n2. Write 3-5 acceptance tests.\n3. Document known limitations."
+  "Research summary for '\{topic}':\n\nFindings:\n- Stable production patterns usually combine simple interfaces, explicit error handling, and observability.\n- Risk concentrates around implicit assumptions, hidden state, and untested failure paths.\n- The most reliable rollout path is prototype, tests, documentation, then optimization.\n\nAction plan:\n1. Build a minimal prototype.\n2. Write 3-5 acceptance tests.\n3. Record assumptions and known limitations."
 }
 
 ///|
@@ -249,12 +255,12 @@ fn review_suggest(area : String) -> String {
 
 ///|
 fn docs_generate(subject : String) -> String {
-  "Documentation outline for '\{subject}':\n\n# \{subject}\n\n## Overview\nWhat it does and why.\n\n## Quick Start\nMinimal example.\n\n## API Reference\nTypes, functions, parameters.\n\n## Examples\nCommon use cases.\n\n## Configuration\nOptions and defaults.\n\n## Troubleshooting\nCommon errors and fixes.\n\nWant me to fill in any section?"
+  "Documentation draft for '\{subject}':\n\n# \{subject}\n\n## Overview\nPurpose, scope, and primary users.\n\n## Quick Start\nMinimal working example and expected output.\n\n## API Reference\nTypes, functions, parameters, return values, and errors.\n\n## Examples\nCommon workflows with copyable commands or code.\n\n## Configuration\nOptions, defaults, and environment variables.\n\n## Troubleshooting\nSymptoms, causes, and fixes."
 }
 
 ///|
 fn docs_explain(concept : String) -> String {
-  "About '\{concept}':\n\nWhat: a clear definition.\nHow: step-by-step mechanism.\nWhen to use: appropriate cases.\nWhen not: anti-patterns and alternatives.\nExample: minimal working code.\n\nWant me to go deeper on any part?"
+  "Concept explanation for '\{concept}':\n\nDefinition: concise description of the concept.\nMechanism: step-by-step explanation of how it works.\nUse cases: situations where it creates value.\nAlternatives: related patterns and trade-offs.\nExample: minimal working code or command."
 }
 
 ///|
@@ -273,12 +279,12 @@ fn test_coverage(scope : String) -> String {
 
 ///|
 fn codegen_implement(spec : String) -> String {
-  "Implementation plan for '\{spec}':\n\n1. Define types (struct/enum) for data model.\n2. Write function signatures with clear inputs/outputs.\n3. Implement core logic with error handling.\n4. Add input validation at boundaries.\n5. Write unit tests (happy path, error, edge).\n\nTDD order:\n- Write failing test for happy path.\n- Implement minimal code to pass.\n- Add error path tests.\n- Refactor if needed.\n\nShall I generate the code?"
+  "Implementation plan for '\{spec}':\n\n1. Define data model types with clear ownership and validation rules.\n2. Write function signatures with explicit inputs and outputs.\n3. Implement core logic with boundary checks and error handling.\n4. Add tests for happy path, error path, and edge cases.\n5. Run the project quality gate.\n\nTDD order:\n- Write a failing happy-path test.\n- Implement the minimal code to pass.\n- Add error-path tests.\n- Refactor after behavior is covered."
 }
 
 ///|
 fn codegen_scaffold(project : String) -> String {
-  "Scaffolding for '\{project}':\n\nDirectory structure:\n  src/\n    main.mbt       # Entry point\n    moon.pkg         # Package config\n  test/\n    main_test.mbt    # Tests\n  README.md\n  moon.mod\n\nBoilerplate:\n1. moon.mod with name, version, deps.\n2. moon.pkg with imports.\n3. main.mbt with entry point.\n4. Basic test file.\n\nShall I create these files?"
+  "Scaffold plan for '\{project}':\n\nDirectory structure:\n  src/\n    main.mbt         # Entry point\n    moon.pkg         # Package config\n  test/\n    main_test.mbt    # Tests\n  README.md\n  moon.mod\n\nBoilerplate checklist:\n1. moon.mod with name, version, and dependencies.\n2. moon.pkg with imports and exports.\n3. main.mbt with entry point and argument handling.\n4. Basic test file with one passing test.\n5. README with build, test, and run commands."
 }
 
 // ============================================================
@@ -287,7 +293,7 @@ fn codegen_scaffold(project : String) -> String {
 
 ///|
 fn debug_diagnose(issue : String) -> String {
-  "Diagnosing '\{issue}':\n\nStep 1 - Reproduce:\n- What input triggers the issue?\n- Is it consistent or intermittent?\n- Minimal reproduction case?\n\nStep 2 - Isolate:\n- Which component is responsible?\n- What changed recently?\n- Check logs and error messages.\n\nStep 3 - Root cause:\n- Is it a logic error, type error, or runtime error?\n- Is it in input handling, core logic, or output?\n- Does it affect all inputs or specific cases?\n\nShall I help narrow down the root cause?"
+  "Diagnosis worksheet for '\{issue}':\n\nStep 1 - Reproduce:\n- Record the exact input, command, and environment.\n- Capture expected behavior and actual behavior.\n- Reduce the case to the smallest failing path.\n\nStep 2 - Isolate:\n- Identify the component boundary where behavior changes.\n- Compare recent changes with the last known good state.\n- Check logs, return values, and persisted data.\n\nStep 3 - Root cause:\n- Classify the defect as logic, type, runtime, integration, or environment.\n- Identify the violated invariant.\n- Write a regression test that fails for the current behavior."
 }
 
 ///|
@@ -301,12 +307,54 @@ fn debug_fix(diagnosis : String) -> String {
 
 ///|
 fn refactor_extract(code_desc : String) -> String {
-  "Extract refactoring for '\{code_desc}':\n\n1. Identify complex logic blocks (>10 lines).\n2. Name the block after its intent.\n3. Extract into a new function.\n4. Replace inline code with function call.\n5. Run tests to verify no behavior change.\n\nRules:\n- Each extracted function does ONE thing.\n- Function name describes WHAT, not HOW.\n- Keep inputs/outputs explicit.\n- No hidden side effects.\n\nShall I identify extraction candidates?"
+  "Extract refactoring plan for '\{code_desc}':\n\n1. Identify logic blocks with a single intent and multiple statements.\n2. Name each block after the domain behavior it represents.\n3. Extract into a function with explicit inputs and outputs.\n4. Replace inline code with the function call.\n5. Run tests to verify behavior preservation.\n\nRules:\n- Each extracted function has one responsibility.\n- Function names describe intent.\n- Inputs and outputs stay explicit.\n- Side effects stay visible at call sites."
 }
 
 ///|
 fn refactor_simplify(code_desc : String) -> String {
-  "Simplify refactoring for '\{code_desc}':\n\nCommon patterns:\n1. Deep nesting -> early returns.\n2. Long conditionals -> pattern matching.\n3. Magic numbers -> named constants.\n4. Repeated patterns -> helper functions.\n5. Complex expressions -> intermediate variables.\n\nSafety checklist:\n- [ ] All tests pass before starting.\n- [ ] Each change is a single commit.\n- [ ] Run tests after each change.\n- [ ] No behavior change.\n\nShall I suggest specific simplifications?"
+  "Simplify refactoring plan for '\{code_desc}':\n\nCommon patterns:\n1. Deep nesting -> guard clauses or smaller functions.\n2. Long conditionals -> pattern matching or named predicates.\n3. Magic numbers -> named constants.\n4. Repeated patterns -> focused helpers.\n5. Complex expressions -> intermediate variables with domain names.\n\nSafety checklist:\n- [ ] Baseline tests pass before editing.\n- [ ] Each change preserves behavior.\n- [ ] Tests run after each logical change.\n- [ ] Public interfaces stay stable unless the task requires an API change."
+}
+
+// ============================================================
+// Security skill tools
+// ============================================================
+
+///|
+fn security_scan(code_desc : String) -> String {
+  "Security scan for '\{code_desc}':\n\nOWASP Top 10 checklist:\n1. Injection: SQL, command, LDAP injection risks?\n2. Broken Auth: weak passwords, session fixation?\n3. Sensitive Data: hardcoded secrets, unencrypted data?\n4. XML External Entities: XXE vulnerabilities?\n5. Broken Access Control: missing authorization checks?\n6. Security Misconfiguration: default credentials, debug mode?\n7. XSS: unescaped user input in output?\n8. Insecure Deserialization: untrusted data deserialization?\n9. Known Vulnerabilities: outdated dependencies?\n10. Insufficient Logging: missing audit trails?\n\nPriority: fix injection and auth issues first."
+}
+
+///|
+fn security_fix(vulnerability : String) -> String {
+  "Security fix for '\{vulnerability}':\n\nCommon fixes:\n- SQL Injection: Use parameterized queries.\n- XSS: Escape all user input in output.\n- CSRF: Add anti-CSRF tokens.\n- Path Traversal: Validate and sanitize file paths.\n- Command Injection: Use allowlists, not blocklists.\n- Hardcoded Secrets: Use environment variables.\n- Weak Auth: Implement rate limiting, MFA.\n\nAlways:\n1. Validate input at boundaries.\n2. Escape output at render time.\n3. Use least privilege principle.\n4. Log security events."
+}
+
+// ============================================================
+// Performance skill tools
+// ============================================================
+
+///|
+fn perf_analyze(code_desc : String) -> String {
+  "Performance analysis for '\{code_desc}':\n\nCommon bottlenecks:\n1. Algorithmic: O(n²) loops, unnecessary iterations.\n2. Memory: excessive allocations, memory leaks.\n3. I/O: blocking calls, N+1 queries.\n4. Network: unnecessary requests, large payloads.\n5. Caching: missing cache, cache invalidation.\n\nMeasurement:\n- Profile before optimizing.\n- Measure latency (p50, p95, p99).\n- Monitor memory usage.\n- Track throughput.\n\nRule: Don't optimize what you haven't measured."
+}
+
+///|
+fn perf_optimize(bottleneck : String) -> String {
+  "Optimization for '\{bottleneck}':\n\nStrategies:\n- Algorithmic: Use appropriate data structures.\n- Memory: Pool allocations, use slices.\n- I/O: Batch operations, use async.\n- Network: Compress, cache, paginate.\n- Caching: LRU cache, memoization.\n\nAlways:\n1. Measure before and after.\n2. Verify correctness preserved.\n3. Document the optimization.\n4. Add performance tests."
+}
+
+// ============================================================
+// Architecture skill tools
+// ============================================================
+
+///|
+fn arch_design(requirements : String) -> String {
+  "Architecture design for '\{requirements}':\n\nDesign process:\n1. Identify components and responsibilities.\n2. Define interfaces and contracts.\n3. Choose communication patterns.\n4. Plan data flow and storage.\n5. Consider scalability and reliability.\n\nPrinciples:\n- Single Responsibility: one reason to change.\n- Open/Closed: extend, don't modify.\n- Dependency Inversion: depend on abstractions.\n- Interface Segregation: small, focused interfaces.\n\nDocument: component diagram, sequence diagram, data model."
+}
+
+///|
+fn arch_review(design : String) -> String {
+  "Architecture review for '\{design}':\n\nReview checklist:\n- [ ] Clear component boundaries?\n- [ ] Appropriate abstraction levels?\n- [ ] Testable in isolation?\n- [ ] Scalable horizontally?\n- [ ] Failure modes handled?\n- [ ] Data consistency maintained?\n- [ ] Security boundaries defined?\n- [ ] Observability built in?\n\nTrade-offs:\n- Consistency vs Availability.\n- Simplicity vs Flexibility.\n- Performance vs Maintainability."
 }
 
 ///|
@@ -395,6 +443,42 @@ pub fn default_skill_registry() -> SkillRegistry {
       SkillTool::new("refactor-simplify", "Simplify code while preserving behavior.", "quality", Low),
     ],
     ["refactor", "clean up", "simplify", "extract", "rename", "restructure", "improve code"],
+  ))
+
+  registry.register(Skill::new(
+    "security",
+    "Security assistant for identifying and fixing security vulnerabilities.",
+    "quality",
+    "You are a security assistant. Analyze code for common vulnerabilities: SQL injection, XSS, CSRF, path traversal, command injection, hardcoded secrets, insecure defaults. Follow OWASP Top 10. Always provide specific fix suggestions with code examples.",
+    [
+      SkillTool::new("security-scan", "Scan code for security vulnerabilities.", "quality", Low),
+      SkillTool::new("security-fix", "Suggest security fixes with code examples.", "quality", Low),
+    ],
+    ["security", "vulnerability", "injection", "XSS", "CSRF", "authentication", "authorization", "encryption"],
+  ))
+
+  registry.register(Skill::new(
+    "performance",
+    "Performance assistant for identifying and fixing performance issues.",
+    "quality",
+    "You are a performance assistant. Analyze code for performance bottlenecks: unnecessary allocations, O(n²) loops, missing caching, N+1 queries, memory leaks. Suggest measurable optimizations. Always measure before optimizing.",
+    [
+      SkillTool::new("perf-analyze", "Analyze code for performance bottlenecks.", "quality", Low),
+      SkillTool::new("perf-optimize", "Suggest performance optimizations.", "quality", Low),
+    ],
+    ["performance", "optimize", "slow", "fast", "cache", "memory", "CPU", "latency", "throughput"],
+  ))
+
+  registry.register(Skill::new(
+    "architecture",
+    "Architecture assistant for system design and architectural decisions.",
+    "development",
+    "You are an architecture assistant. Help with system design, component decomposition, API design, data modeling, and architectural decisions. Follow SOLID principles. Consider scalability, maintainability, and testability. Always explain trade-offs.",
+    [
+      SkillTool::new("arch-design", "Design system architecture.", "development", Low),
+      SkillTool::new("arch-review", "Review architectural decisions.", "development", Low),
+    ],
+    ["architecture", "design", "system design", "API design", "component", "module", "microservice", "monolith"],
   ))
 
   registry

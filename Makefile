@@ -4,7 +4,7 @@
 all: check test build-native
 
 # Version
-VERSION := 0.2.0
+VERSION := 1.0.0
 BUILD_DIR := _build/dist-autoagent-$(VERSION)
 BINARY_NAME := autoagent
 

@@ -65,3 +65,13 @@ pub fn set_env(_key : String, _value : String) -> Bool {
 pub fn get_cwd() -> String {
   ""
 }
+
+///|
+pub fn read_stdin_line() -> String {
+  ""
+}
+
+///|
+pub fn stdin_eof() -> Bool {
+  true
+}

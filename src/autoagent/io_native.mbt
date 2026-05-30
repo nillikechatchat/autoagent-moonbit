@@ -5,10 +5,6 @@
 ///
 
 ///|
-#external
-type NativePtr
-
-///|
 #borrow(url, body, auth)
 extern "c" fn autoagent_http_post(
   url : Bytes,
@@ -72,11 +68,21 @@ extern "c" fn autoagent_setenv(
 ) -> Int = "autoagent_setenv"
 
 ///|
+#borrow(key)
+extern "c" fn autoagent_getenv(key : Bytes, key_len : Int) -> Bytes = "autoagent_getenv"
+
+///|
 extern "c" fn autoagent_getcwd_alloc() -> Bytes = "autoagent_getcwd_alloc"
 
 ///|
 #borrow(ptr)
 extern "c" fn autoagent_free(ptr : Bytes) -> Unit = "autoagent_free"
+
+///|
+extern "c" fn autoagent_read_line() -> Bytes = "autoagent_read_line"
+
+///|
+extern "c" fn autoagent_stdin_eof() -> Int = "autoagent_stdin_eof"
 
 ///|
 /// Convert String to null-terminated Bytes for C interop
@@ -285,4 +291,22 @@ pub fn get_cwd() -> String {
   let s = c_bytes_to_str(cwd)
   autoagent_free(cwd)
   s
+}
+
+///|
+/// Read a line from stdin. Returns empty string on EOF.
+///
+pub fn read_stdin_line() -> String {
+  let line = autoagent_read_line()
+  if line.length() == 0 { return "" }
+  let s = c_bytes_to_str(line)
+  autoagent_free(line)
+  s
+}
+
+///|
+/// Check if stdin is at EOF.
+///
+pub fn stdin_eof() -> Bool {
+  autoagent_stdin_eof() != 0
 }
