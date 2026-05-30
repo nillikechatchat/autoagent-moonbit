@@ -17,7 +17,7 @@ IO_O := _build/native/release/build/io.o
 RUNTIME_O := _build/native/release/build/runtime.o
 
 # Linker flags (no external dependencies for portability)
-LDFLAGS := -lm -static
+LDFLAGS := -lm
 
 help:
 	@echo "AutoAgent Build Targets:"
