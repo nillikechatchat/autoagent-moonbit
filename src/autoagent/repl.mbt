@@ -323,6 +323,10 @@ pub fn run_repl(config : LLMConfig, session_dir : String, memory_file : String) 
   }
 
   while true {
+    // Check if stdin is at EOF (piped input exhausted)
+    if stdin_eof() {
+      break
+    }
     print_prompt()
     let input = read_line()
     let trimmed = input.trim().to_owned()
