@@ -17,7 +17,7 @@ IO_O := _build/native/release/build/io.o
 RUNTIME_O := _build/native/release/build/runtime.o
 
 # Linker flags (no external dependencies for portability)
-LDFLAGS := -lm
+LDFLAGS := -lm -static
 
 help:
 	@echo "AutoAgent Build Targets:"
@@ -57,8 +57,7 @@ build-native:
 		$$HOME/.moon/lib/moonbit_simdutf.o \
 		$$HOME/.moon/lib/simdutf.o \
 		$(IO_O) \
-		$(LDFLAGS) \
-		$$HOME/.moon/lib/libbacktrace.a
+		$(LDFLAGS)
 	@chmod +x $(NATIVE_EXE)
 	@echo "Native binary: $(NATIVE_EXE)"
 
